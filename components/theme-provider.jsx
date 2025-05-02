@@ -1,8 +1,44 @@
-'use client';
+"use client"
 
-import React from 'react';
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { createContext, useContext, useEffect, useState } from "react"
 
-export function ThemeProvider({ children, ...props }) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+const ThemeContext = createContext({
+  theme: "light",
+  toggleTheme: () => {},
+})
+
+export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState("light")
+  const [mounted, setMounted] = useState(false)
+
+  // Handle initial theme setup
+  useEffect(() => {
+    setMounted(true)
+    const savedTheme = localStorage.getItem("theme")
+
+    if (savedTheme) {
+      setTheme(savedTheme)
+      document.documentElement.classList.toggle("dark", savedTheme === "dark")
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setTheme("dark")
+      document.documentElement.classList.add("dark")
+    }
+  }, [])
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light"
+    setTheme(newTheme)
+    document.documentElement.classList.toggle("dark", newTheme === "dark")
+    localStorage.setItem("theme", newTheme)
+  }
+
+  if (!mounted) {
+    return null
+  }
+
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>
+}
+
+export function useTheme() {
+  return useContext(ThemeContext)
 }

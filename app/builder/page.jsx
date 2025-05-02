@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
 import { Button } from "../../components/ui/button"
+import { Dialog, DialogContent } from "../../components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import PersonalInfoForm from "../../components/resume-form/personal-info-form"
 import EducationForm from "../../components/resume-form/education-form"
@@ -13,6 +15,7 @@ import CertificationsForm from "../../components/resume-form/certifications-form
 import { useResumeContext } from "../../context/resume-provider"
 import { templates } from "../../lib/templates"
 import { ThemeToggle } from "../../components/theme-toggle"
+import { cn } from "../../lib/utils"
 import {  Download,
   Save,
   Maximize2,
@@ -53,16 +56,14 @@ export default function Builder() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
 
-  // Load template from URL parameter
-  useEffect(() => {
-    const templateId = searchParams.get("template")
-    if (templateId && templateId !== resumeData.selectedTemplate) {
-      setSelectedTemplate(templateId)
-      setResumeData((prev) => ({
-        ...prev,
-        selectedTemplate: templateId,
-      }))
-    }
+ useEffect(() => {
+    const templateId = searchParams.get("template") || "modern"
+    setSelectedTemplate(templateId)
+    setResumeData(prev => ({
+      ...prev,
+      selectedTemplate: templateId
+    }))
+    
   }, [searchParams, setResumeData, resumeData.selectedTemplate])
 
   const handleTemplateSelect = (templateId) => {
@@ -83,13 +84,10 @@ export default function Builder() {
   }
 
   const handleDownloadPDF = async () => {
-    // Validate data before download
     const errors = validateResumeData(resumeData)
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors)
-
-      // Show toast with validation error
       toast({
         title: "Please fix the following errors",
         description: "Some required fields are missing or invalid",
@@ -109,7 +107,7 @@ export default function Builder() {
     })
 
     try {
-      // Use our custom PDF generator function
+  
       await generatePDF(resumeRef.current, resumeData.personal.name || "resume")
 
       toast({
@@ -216,7 +214,6 @@ export default function Builder() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-auto bg-secondary/30 p-8 flex justify-center">
           <div
             className="bg-white paper-effect mx-auto transition-transform"
@@ -237,22 +234,10 @@ export default function Builder() {
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
-      {/* Top Navigation Bar */}
       <header className="bg-card border-b sticky top-0 z-10 transition-colors duration-300">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center">
-            <Link href="/" className="mr-4">
-              <Button variant="ghost" size="sm" className="gap-2 font-bold">
-                <Image
-                  src="/placeholder.svg?height=24&width=24"
-                  width={24}
-                  height={24}
-                  alt="Logo"
-                  className="rounded-sm"
-                />
-                Resume Builder
-              </Button>
-            </Link>
+            
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -294,8 +279,6 @@ export default function Builder() {
           </div>
         </div>
       </header>
-
-      {/* Template Selector Dialog */}
       <Dialog open={showTemplateSelector} onOpenChange={setShowTemplateSelector}>
         <DialogContent className="sm:max-w-[800px]">
           <h2 className="text-xl font-semibold mb-4">Choose a Template</h2>
@@ -334,15 +317,13 @@ export default function Builder() {
         </DialogContent>
       </Dialog>
 
-      {/* Main Content - Split Layout */}
+    
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Side - Form */}
           <div className="lg:w-1/2 animate-fade-in">
             <div className="bg-card rounded-lg border p-6 transition-colors duration-300">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">Resume Builder</h2>
                   <div className="hidden sm:block">
                     <TabsList className="grid grid-cols-3 sm:grid-cols-6 gap-1">
                       {sections.map((section) => (
@@ -443,7 +424,7 @@ export default function Builder() {
               </Tabs>
             </div>
 
-            {/* Mobile Preview Button */}
+    
             <div className="lg:hidden mt-6">
               <Button
                 variant="outline"
@@ -455,8 +436,6 @@ export default function Builder() {
               </Button>
             </div>
           </div>
-
-          {/* Right Side - Preview */}
           <div className="hidden lg:block lg:w-1/2 animate-fade-in">
             <div className="bg-card rounded-lg border p-6 sticky top-20 transition-colors duration-300">
               <div className="flex justify-between items-center mb-4">
@@ -483,7 +462,7 @@ export default function Builder() {
                   </Button>
                 </div>
               </div>
-              <div className="bg-secondary/30 rounded-lg p-4 flex justify-center transition-colors duration-300">
+              <div className="bg-secondary/30 rounded-lg  flex justify-center transition-colors duration-300">
                 <ScrollArea className="h-[calc(100vh-220px)] w-full">
                   <div
                     className="bg-white paper-effect mx-auto transition-transform origin-top"
