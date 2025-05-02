@@ -6,7 +6,7 @@ import { Label } from "../ui/label"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Alert, AlertDescription } from "../ui/alert"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle ,X } from "lucide-react"
 import { Badge } from "../ui/badge"
 export default function SkillsForm({ validationErrors = [] }) {
   const { resumeData, updateSkills } = useResumeContext()
