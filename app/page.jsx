@@ -98,7 +98,7 @@ export default function Home() {
                 <CardContent className="p-0">
                   <div className="relative h-64 w-full">
                     <Image
-                      src={template.thumbnail || "/placeholder.svg"}
+                      src={template.thumbnail}
                       alt={template.name}
                       fill
                       className="object-cover"
