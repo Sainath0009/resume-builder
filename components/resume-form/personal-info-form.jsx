@@ -7,6 +7,7 @@ import { Textarea } from "../ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle } from "lucide-react"
+import { MagicWriter } from "../magic-writer"
 
 export default function PersonalInfoForm({ validationErrors = [] }) {
   const { resumeData, updatePersonalInfo } = useResumeContext()
@@ -89,26 +90,31 @@ export default function PersonalInfoForm({ validationErrors = [] }) {
     }
   }
 
-  return (
-    <Card className="border-0 shadow-none">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle>Personal Information</CardTitle>
-        <CardDescription>Enter your personal details to be displayed on your resume</CardDescription>
-      </CardHeader>
-      <CardContent className="px-0">
-        {validationErrors.length > 0 && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <ul className="list-disc pl-5">
-                {validationErrors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
+  const handleEnhanceSummary = (enhancedText) => {
+    setFormData((prev) => ({
+      ...prev,
+      summary: enhancedText,
+    }))
+    updatePersonalInfo({ summary: enhancedText })
+  }
 
+  return (
+    <div className="space-y-6">
+      {validationErrors.length > 0 && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <ul className="list-disc pl-5">
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div>
+        <h3 className="text-lg font-medium mb-4">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center">
@@ -168,7 +174,10 @@ export default function PersonalInfoForm({ validationErrors = [] }) {
             />
           </div>
         </div>
+      </div>
 
+      <div>
+        <h3 className="text-lg font-medium mb-4">Online Presence</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="space-y-2">
             <Label htmlFor="website">Website</Label>
@@ -210,9 +219,15 @@ export default function PersonalInfoForm({ validationErrors = [] }) {
             {errors.github && <p className="text-sm text-red-500">{errors.github}</p>}
           </div>
         </div>
+      </div>
 
+      <div>
+        <h3 className="text-lg font-medium mb-4">Professional Summary</h3>
         <div className="space-y-2">
-          <Label htmlFor="summary">Professional Summary</Label>
+          <div className="flex justify-between items-center">
+            <Label htmlFor="summary">Summary</Label>
+            <MagicWriter text={formData.summary} onEnhance={handleEnhanceSummary} label="✨ Magic Writer" />
+          </div>
           <Textarea
             id="summary"
             name="summary"
@@ -223,7 +238,7 @@ export default function PersonalInfoForm({ validationErrors = [] }) {
             rows={5}
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

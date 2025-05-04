@@ -10,9 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Checkbox } from "../ui/checkbox"
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle, Plus, Trash } from "lucide-react"
+import { aiFeatures } from "../../lib/utils"
+import { MagicWriter } from "../magic-writer"
 
 export default function ExperienceForm({ validationErrors = [] }) {
-  const { resumeData, updateExperience } = useResumeContext()
+  const { resumeData, updateExperience, updateSkills } = useResumeContext()
   const [experienceList, setExperienceList] = useState(
     resumeData.experience.length > 0
       ? resumeData.experience
@@ -28,6 +30,8 @@ export default function ExperienceForm({ validationErrors = [] }) {
           },
         ],
   )
+  const [aiSuggestions, setAiSuggestions] = useState({})
+  const [loadingSuggestions, setLoadingSuggestions] = useState({})
 
   useEffect(() => {
     if (resumeData.experience.length > 0) {
@@ -82,30 +86,107 @@ export default function ExperienceForm({ validationErrors = [] }) {
     const updatedList = experienceList.filter((_, i) => i !== index)
     setExperienceList(updatedList)
     updateExperience(updatedList)
+
+    // Remove any AI suggestions for this index
+    const updatedSuggestions = { ...aiSuggestions }
+    delete updatedSuggestions[index]
+    setAiSuggestions(updatedSuggestions)
+  }
+
+  const getAISuggestion = async (index) => {
+    const description = experienceList[index].description
+
+    if (!description || description.length < 10) {
+      setAiSuggestions({
+        ...aiSuggestions,
+        [index]: "Please add more details to your description to get AI suggestions.",
+      })
+      return
+    }
+
+    setLoadingSuggestions({
+      ...loadingSuggestions,
+      [index]: true,
+    })
+
+    try {
+      const suggestion = await aiFeatures.suggestImprovements(description)
+
+      setAiSuggestions({
+        ...aiSuggestions,
+        [index]: suggestion,
+      })
+    } catch (error) {
+      console.error("Error getting AI suggestion:", error)
+      setAiSuggestions({
+        ...aiSuggestions,
+        [index]: "Failed to get AI suggestions. Please try again.",
+      })
+    } finally {
+      setLoadingSuggestions({
+        ...loadingSuggestions,
+        [index]: false,
+      })
+    }
+  }
+
+  const extractSkills = useCallback(
+    (index) => {
+      const description = experienceList[index].description
+      if (!description) return "No description provided."
+
+      const extractedSkills = aiFeatures.extractSkillsFromDescription(description)
+
+      if (extractedSkills && extractedSkills.length > 0) {
+        const currentTechnicalSkills = resumeData.skills.technical || []
+
+        // Filter out skills that are already in the list
+        const newSkills = extractedSkills.filter((skill) => !currentTechnicalSkills.includes(skill))
+
+        if (newSkills.length > 0) {
+          updateSkills({
+            technical: [...currentTechnicalSkills, ...newSkills],
+          })
+
+          return `Added ${newSkills.length} skills: ${newSkills.join(", ")}`
+        } else {
+          return "No new skills found in your description."
+        }
+      } else {
+        return "No skills detected in your description."
+      }
+    },
+    [resumeData.skills.technical, updateSkills, experienceList],
+  )
+
+  const handleEnhanceDescription = (index, enhancedText) => {
+    const updatedList = [...experienceList]
+    updatedList[index] = {
+      ...updatedList[index],
+      description: enhancedText,
+    }
+    setExperienceList(updatedList)
+    updateExperience(updatedList)
   }
 
   return (
-    <Card className="border-0 shadow-none">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle>Work Experience</CardTitle>
-        <CardDescription>Add your professional experience, including current and previous positions</CardDescription>
-      </CardHeader>
-      <CardContent className="px-0">
-        {validationErrors.length > 0 && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <ul className="list-disc pl-5">
-                {validationErrors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
+    <div className="space-y-6">
+      {validationErrors.length > 0 && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <ul className="list-disc pl-5">
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
-        {experienceList.map((experience, index) => (
-          <div key={index} className="mb-8 border-b pb-6 last:border-0">
+      {experienceList.map((experience, index) => (
+        <Card key={index} className="overflow-hidden">
+          <CardContent className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Experience #{index + 1}</h3>
               {experienceList.length > 1 && (
@@ -189,7 +270,35 @@ export default function ExperienceForm({ validationErrors = [] }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`description-${index}`}>Description</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor={`description-${index}`}>Description</Label>
+                <div className="flex gap-2">
+                  <MagicWriter
+                    text={experience.description}
+                    onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
+                    label="✨ Magic Writer"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-blue-600 dark:text-blue-400"
+                    onClick={() => getAISuggestion(index)}
+                    disabled={loadingSuggestions[index]}
+                  >
+                    {loadingSuggestions[index] ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Getting suggestions...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3 w-3" />
+                        Get AI suggestions
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
               <Textarea
                 id={`description-${index}`}
                 name="description"
@@ -198,14 +307,53 @@ export default function ExperienceForm({ validationErrors = [] }) {
                 placeholder="Describe your responsibilities, achievements, and technologies used"
                 rows={4}
               />
-            </div>
-          </div>
-        ))}
 
-        <Button type="button" variant="outline" onClick={addExperience} className="w-full mt-2">
-          <Plus className="h-4 w-4 mr-2" /> Add Experience
-        </Button>
-      </CardContent>
-    </Card>
+              {aiSuggestions[index] && (
+                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-900 rounded-md">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-blue-800 dark:text-blue-300">{aiSuggestions[index]}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7 px-2"
+                          onClick={() => {
+                            const result = extractSkills(index)
+                            setAiSuggestions({
+                              ...aiSuggestions,
+                              [index]: result,
+                            })
+                          }}
+                        >
+                          Extract Skills
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-7 px-2"
+                          onClick={() => {
+                            const updatedSuggestions = { ...aiSuggestions }
+                            delete updatedSuggestions[index]
+                            setAiSuggestions(updatedSuggestions)
+                          }}
+                        >
+                          Dismiss
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      <Button type="button" variant="outline" onClick={addExperience} className="w-full mt-2">
+        <Plus className="h-4 w-4 mr-2" /> Add Experience
+      </Button>
+    </div>
   )
 }

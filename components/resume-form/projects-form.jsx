@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle, Plus, Trash } from "lucide-react"
 
+import { MagicWriter } from "../magic-writer"
+
 export default function ProjectsForm({ validationErrors = [] }) {
   const { resumeData, updateProjects } = useResumeContext()
   const [projectsList, setProjectsList] = useState(
@@ -42,7 +44,17 @@ export default function ProjectsForm({ validationErrors = [] }) {
     }
     setProjectsList(updatedList)
 
-    // Update context in real-time for live preview
+   
+    updateProjects(updatedList)
+  }
+
+  const handleEnhanceDescription = (index, enhancedText) => {
+    const updatedList = [...projectsList]
+    updatedList[index] = {
+      ...updatedList[index],
+      description: enhancedText,
+    }
+    setProjectsList(updatedList)
     updateProjects(updatedList)
   }
 
@@ -154,7 +166,14 @@ export default function ProjectsForm({ validationErrors = [] }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`description-${index}`}>Description</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor={`description-${index}`}>Description</Label>
+                <MagicWriter
+                  text={project.description}
+                  onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
+                  label="✨ Magic Writer"
+                />
+              </div>
               <Textarea
                 id={`description-${index}`}
                 name="description"

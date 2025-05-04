@@ -9,6 +9,7 @@ import { Button } from "../ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle, Plus, Trash } from "lucide-react"
+import { MagicWriter } from "../magic-writer"
 
 export default function EducationForm({ validationErrors = [] }) {
   const { resumeData, updateEducation } = useResumeContext()
@@ -93,6 +94,16 @@ export default function EducationForm({ validationErrors = [] }) {
         return newErrors
       })
     }
+  }
+
+  const handleEnhanceDescription = (index, enhancedText) => {
+    const updatedList = [...educationList]
+    updatedList[index] = {
+      ...updatedList[index],
+      description: enhancedText,
+    }
+    setEducationList(updatedList)
+    updateEducation(updatedList)
   }
 
   const addEducation = () => {
@@ -226,7 +237,14 @@ export default function EducationForm({ validationErrors = [] }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`description-${index}`}>Description</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor={`description-${index}`}>Description</Label>
+                <MagicWriter
+                  text={education.description}
+                  onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
+                  label="✨ Magic Writer"
+                />
+              </div>
               <Textarea
                 id={`description-${index}`}
                 name="description"
