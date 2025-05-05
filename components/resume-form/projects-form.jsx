@@ -11,7 +11,6 @@ import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle, Plus, Trash } from "lucide-react"
 
 import { MagicWriter } from "../magic-writer"
-
 export default function ProjectsForm({ validationErrors = [] }) {
   const { resumeData, updateProjects } = useResumeContext()
   const [projectsList, setProjectsList] = useState(
@@ -44,7 +43,7 @@ export default function ProjectsForm({ validationErrors = [] }) {
     }
     setProjectsList(updatedList)
 
-   
+    // Update context in real-time for live preview
     updateProjects(updatedList)
   }
 
@@ -166,14 +165,7 @@ export default function ProjectsForm({ validationErrors = [] }) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor={`description-${index}`}>Description</Label>
-                <MagicWriter
-                  text={project.description}
-                  onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
-                  label="✨ Magic Writer"
-                />
-              </div>
+              <Label htmlFor={`description-${index}`}>Description</Label>
               <Textarea
                 id={`description-${index}`}
                 name="description"
@@ -181,6 +173,12 @@ export default function ProjectsForm({ validationErrors = [] }) {
                 onChange={(e) => handleChange(index, e)}
                 placeholder="Describe the project, its purpose, and your role"
                 rows={3}
+              />
+              <MagicWriter
+                text={project.description}
+                onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
+                label="✨ Enhance with AI"
+                inline={true}
               />
             </div>
           </div>

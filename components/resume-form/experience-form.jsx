@@ -14,7 +14,7 @@ import { aiFeatures } from "../../lib/utils"
 import { MagicWriter } from "../magic-writer"
 
 export default function ExperienceForm({ validationErrors = [] }) {
-  const { resumeData, updateExperience, updateSkills } = useResumeContext()
+  const { resumeData, updateExperience } = useResumeContext()
   const [experienceList, setExperienceList] = useState(
     resumeData.experience.length > 0
       ? resumeData.experience
@@ -30,8 +30,6 @@ export default function ExperienceForm({ validationErrors = [] }) {
           },
         ],
   )
-  const [aiSuggestions, setAiSuggestions] = useState({})
-  const [loadingSuggestions, setLoadingSuggestions] = useState({})
 
   useEffect(() => {
     if (resumeData.experience.length > 0) {
@@ -86,78 +84,7 @@ export default function ExperienceForm({ validationErrors = [] }) {
     const updatedList = experienceList.filter((_, i) => i !== index)
     setExperienceList(updatedList)
     updateExperience(updatedList)
-
-    // Remove any AI suggestions for this index
-    const updatedSuggestions = { ...aiSuggestions }
-    delete updatedSuggestions[index]
-    setAiSuggestions(updatedSuggestions)
   }
-
-  const getAISuggestion = async (index) => {
-    const description = experienceList[index].description
-
-    if (!description || description.length < 10) {
-      setAiSuggestions({
-        ...aiSuggestions,
-        [index]: "Please add more details to your description to get AI suggestions.",
-      })
-      return
-    }
-
-    setLoadingSuggestions({
-      ...loadingSuggestions,
-      [index]: true,
-    })
-
-    try {
-      const suggestion = await aiFeatures.suggestImprovements(description)
-
-      setAiSuggestions({
-        ...aiSuggestions,
-        [index]: suggestion,
-      })
-    } catch (error) {
-      console.error("Error getting AI suggestion:", error)
-      setAiSuggestions({
-        ...aiSuggestions,
-        [index]: "Failed to get AI suggestions. Please try again.",
-      })
-    } finally {
-      setLoadingSuggestions({
-        ...loadingSuggestions,
-        [index]: false,
-      })
-    }
-  }
-
-  const extractSkills = useCallback(
-    (index) => {
-      const description = experienceList[index].description
-      if (!description) return "No description provided."
-
-      const extractedSkills = aiFeatures.extractSkillsFromDescription(description)
-
-      if (extractedSkills && extractedSkills.length > 0) {
-        const currentTechnicalSkills = resumeData.skills.technical || []
-
-        // Filter out skills that are already in the list
-        const newSkills = extractedSkills.filter((skill) => !currentTechnicalSkills.includes(skill))
-
-        if (newSkills.length > 0) {
-          updateSkills({
-            technical: [...currentTechnicalSkills, ...newSkills],
-          })
-
-          return `Added ${newSkills.length} skills: ${newSkills.join(", ")}`
-        } else {
-          return "No new skills found in your description."
-        }
-      } else {
-        return "No skills detected in your description."
-      }
-    },
-    [resumeData.skills.technical, updateSkills, experienceList],
-  )
 
   const handleEnhanceDescription = (index, enhancedText) => {
     const updatedList = [...experienceList]
@@ -272,32 +199,6 @@ export default function ExperienceForm({ validationErrors = [] }) {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label htmlFor={`description-${index}`}>Description</Label>
-                <div className="flex gap-2">
-                  <MagicWriter
-                    text={experience.description}
-                    onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
-                    label="✨ Magic Writer"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1 text-blue-600 dark:text-blue-400"
-                    onClick={() => getAISuggestion(index)}
-                    disabled={loadingSuggestions[index]}
-                  >
-                    {loadingSuggestions[index] ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        Getting suggestions...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-3 w-3" />
-                        Get AI suggestions
-                      </>
-                    )}
-                  </Button>
-                </div>
               </div>
               <Textarea
                 id={`description-${index}`}
@@ -307,45 +208,12 @@ export default function ExperienceForm({ validationErrors = [] }) {
                 placeholder="Describe your responsibilities, achievements, and technologies used"
                 rows={4}
               />
-
-              {aiSuggestions[index] && (
-                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-900 rounded-md">
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-blue-800 dark:text-blue-300">{aiSuggestions[index]}</p>
-                      <div className="flex gap-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs h-7 px-2"
-                          onClick={() => {
-                            const result = extractSkills(index)
-                            setAiSuggestions({
-                              ...aiSuggestions,
-                              [index]: result,
-                            })
-                          }}
-                        >
-                          Extract Skills
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs h-7 px-2"
-                          onClick={() => {
-                            const updatedSuggestions = { ...aiSuggestions }
-                            delete updatedSuggestions[index]
-                            setAiSuggestions(updatedSuggestions)
-                          }}
-                        >
-                          Dismiss
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <MagicWriter
+                text={experience.description}
+                onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
+                label="✨ Enhance with AI"
+                inline={true}
+              />
             </div>
           </CardContent>
         </Card>

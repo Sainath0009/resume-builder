@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle } from "lucide-react"
 import { MagicWriter } from "../magic-writer"
-
 export default function PersonalInfoForm({ validationErrors = [] }) {
   const { resumeData, updatePersonalInfo } = useResumeContext()
   const [formData, setFormData] = useState(resumeData.personal)
@@ -224,10 +223,7 @@ export default function PersonalInfoForm({ validationErrors = [] }) {
       <div>
         <h3 className="text-lg font-medium mb-4">Professional Summary</h3>
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label htmlFor="summary">Summary</Label>
-            <MagicWriter text={formData.summary} onEnhance={handleEnhanceSummary} label="✨ Magic Writer" />
-          </div>
+          <Label htmlFor="summary">Summary</Label>
           <Textarea
             id="summary"
             name="summary"
@@ -236,6 +232,12 @@ export default function PersonalInfoForm({ validationErrors = [] }) {
             onBlur={handleBlur}
             placeholder="Briefly describe your professional background and career goals"
             rows={5}
+          />
+          <MagicWriter
+            text={formData.summary}
+            onEnhance={handleEnhanceSummary}
+            label="✨ Enhance with AI"
+            inline={true}
           />
         </div>
       </div>

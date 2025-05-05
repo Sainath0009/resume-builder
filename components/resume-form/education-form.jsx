@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle, Plus, Trash } from "lucide-react"
 import { MagicWriter } from "../magic-writer"
 
+
 export default function EducationForm({ validationErrors = [] }) {
   const { resumeData, updateEducation } = useResumeContext()
   const [educationList, setEducationList] = useState(
@@ -237,14 +238,7 @@ export default function EducationForm({ validationErrors = [] }) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor={`description-${index}`}>Description</Label>
-                <MagicWriter
-                  text={education.description}
-                  onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
-                  label="✨ Magic Writer"
-                />
-              </div>
+              <Label htmlFor={`description-${index}`}>Description</Label>
               <Textarea
                 id={`description-${index}`}
                 name="description"
@@ -253,6 +247,12 @@ export default function EducationForm({ validationErrors = [] }) {
                 onBlur={(e) => handleBlur(index, e)}
                 placeholder="Relevant coursework, achievements, or activities"
                 rows={3}
+              />
+              <MagicWriter
+                text={education.description}
+                onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
+                label="✨ Enhance with AI"
+                inline={true}
               />
             </div>
           </div>

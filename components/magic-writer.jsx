@@ -3,17 +3,15 @@
 import { useState } from "react"
 import { Button } from "./ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
-import { Sparkles, Check, X, Loader2, Wand2 } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs"
 import { Badge } from "./ui/badge"
+import { Sparkles, Check, X, Loader2, Wand2 } from "lucide-react"
+import { Progress } from "./ui/progress"
+import { aiService } from "../lib/utils"
 
 /**
- * MagicWriter component for enhancing text with AI
- * @param {Object} props
- * @param {string} props.text - The original text to enhance
- * @param {function} props.onEnhance - Callback function when text is enhanced
- * @param {boolean} props.inline - Whether to show inline suggestions (default: false)
- * @param {string} props.label - Label for the button (default: "✨ Magic Writer")
+ * Magic Writer - AI Text Enhancer
+ * Transform your resume instantly with AI-powered rewriting in one click
  */
 export function MagicWriter({ text, onEnhance, inline = false, label = "✨ Magic Writer" }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -21,129 +19,70 @@ export function MagicWriter({ text, onEnhance, inline = false, label = "✨ Magi
   const [enhancedText, setEnhancedText] = useState("")
   const [selectedTone, setSelectedTone] = useState("professional")
   const [error, setError] = useState(null)
-  const [diffHighlight, setDiffHighlight] = useState(null)
+  const [diffHighlight, setDiffHighlight] = useState([])
+  const [progress, setProgress] = useState(0)
+  const [showEnhanced, setShowEnhanced] = useState(false)
 
-  
-  const enhanceText = async (text, tone) => {
+  // One-click enhancement function
+  const handleOneClickEnhance = async () => {
     if (!text || text.trim().length < 10) {
-      throw new Error("Please provide more text to enhance (at least 10 characters).")
+      setError("Please provide more text to enhance (at least 10 characters).")
+      return
     }
 
     setIsLoading(true)
     setError(null)
+    setProgress(0)
+    setShowEnhanced(false)
 
     try {
+      // Simulate text analysis progress
+      const progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 95) {
+            clearInterval(progressInterval)
+            return prev
+          }
+          return prev + Math.floor(Math.random() * 15)
+        })
+      }, 200)
+
       // Simulate API call with a delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Mock enhancement based on tone
-      let result = text
+      // Clear the interval
+      clearInterval(progressInterval)
+      setProgress(100)
 
-      // Basic enhancements for all tones
-      result = result
-        .replace(/i /g, "I ")
-        .replace(/\bi'm\b/gi, "I'm")
-        .replace(/\bim\b/gi, "I'm")
-        .replace(/\bdont\b/gi, "don't")
-        .replace(/\bcant\b/gi, "can't")
-
-      // Tone-specific enhancements
-      switch (tone) {
-        case "professional":
-          result = result
-            .replace(/worked on/gi, "developed")
-            .replace(/made/gi, "created")
-            .replace(/did/gi, "executed")
-            .replace(/helped/gi, "collaborated")
-            .replace(/used/gi, "utilized")
-            .replace(/good/gi, "excellent")
-            .replace(/team player/gi, "collaborative professional")
-            .replace(/responsible for/gi, "led")
-            .replace(/in charge of/gi, "managed")
-
-          // Add more professional language
-          if (!result.includes("successfully") && Math.random() > 0.7) {
-            result = result.replace(/\. /g, " successfully. ")
-          }
-          break
-
-        case "ats":
-          // Add industry keywords if they don't exist
-          const keywords = [
-            "developed",
-            "implemented",
-            "managed",
-            "optimized",
-            "analyzed",
-            "coordinated",
-            "strategic",
-            "cross-functional",
-            "innovative",
-          ]
-          const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)]
-
-          if (!keywords.some((keyword) => result.toLowerCase().includes(keyword))) {
-            result = `${randomKeyword} ${result.charAt(0).toLowerCase() + result.slice(1)}`
-          }
-
-          // Add metrics if none exist
-          if (!result.match(/\d+%/) && !result.match(/\d+ percent/) && Math.random() > 0.6) {
-            result = result.replace(/\. /g, ", resulting in significant improvements. ")
-          }
-          break
-
-        case "concise":
-          // Make text more concise
-          result = result
-            .replace(/in order to/gi, "to")
-            .replace(/due to the fact that/gi, "because")
-            .replace(/at this point in time/gi, "now")
-            .replace(/on a regular basis/gi, "regularly")
-            .replace(/in the event that/gi, "if")
-            .replace(/in the process of/gi, "currently")
-
-          // Remove filler words
-          result = result.replace(/basically |essentially |actually |really |very |quite |literally /gi, "")
-          break
-
-        case "confident":
-          // Add confident language
-          result = result
-            .replace(/I think/gi, "I know")
-            .replace(/I believe/gi, "I am confident")
-            .replace(/might/gi, "will")
-            .replace(/could/gi, "can")
-            .replace(/tried to/gi, "successfully")
-            .replace(/attempted to/gi, "accomplished")
-            .replace(/helped/gi, "led")
-            .replace(/participated in/gi, "drove")
-            .replace(/was part of/gi, "was instrumental in")
-          break
-      }
-
-      // Capitalize first letter of sentences
-      result = result.replace(/(^\s*|[.!?]\s*)[a-z]/g, (match) => match.toUpperCase())
-
-      // Ensure proper ending punctuation
-      if (!result.match(/[.!?]$/)) {
-        result += "."
-      }
+      // Generate enhanced text based on selected tone
+      const enhanced = await aiService.enhanceText(text, selectedTone)
+      setEnhancedText(enhanced)
 
       // Generate diff highlights
-      const diffResult = generateDiffHighlight(text, result)
+      const diffResult = generateDiffHighlight(text, enhanced)
       setDiffHighlight(diffResult)
 
-      return result
-    } catch (error) {
-      throw new Error("Failed to enhance text. Please try again.")
+      setShowEnhanced(true)
+    } catch (err) {
+      setError(err.message || "Failed to enhance text. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Simple function to highlight differences between original and enhanced text
+  const handleAccept = () => {
+    if (enhancedText) {
+      onEnhance(enhancedText)
+      setShowEnhanced(false)
+      setEnhancedText("")
+      setDiffHighlight([])
+    }
+  }
+
+  // Generate diff highlights between original and enhanced text
   const generateDiffHighlight = (original, enhanced) => {
-    // This is a simplified approach - in a real app, you'd use a proper diff algorithm
+    if (!original || !enhanced) return []
+
     const words1 = original.split(/\s+/)
     const words2 = enhanced.split(/\s+/)
 
@@ -188,38 +127,9 @@ export function MagicWriter({ text, onEnhance, inline = false, label = "✨ Magi
     return result
   }
 
-  const handleEnhance = async () => {
-    try {
-      const enhanced = await enhanceText(text, selectedTone)
-      setEnhancedText(enhanced)
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const handleAccept = () => {
-    if (enhancedText) {
-      onEnhance(enhancedText)
-      setIsOpen(false)
-      setEnhancedText("")
-      setDiffHighlight(null)
-    }
-  }
-
-  const handleOpenChange = (open) => {
-    setIsOpen(open)
-    if (open) {
-      handleEnhance()
-    } else {
-      setEnhancedText("")
-      setError(null)
-      setDiffHighlight(null)
-    }
-  }
-
   // Render the highlighted text with changes emphasized
   const renderHighlightedText = () => {
-    if (!diffHighlight) return enhancedText
+    if (!diffHighlight || diffHighlight.length === 0) return enhancedText
 
     return (
       <span>
@@ -240,61 +150,89 @@ export function MagicWriter({ text, onEnhance, inline = false, label = "✨ Magi
     )
   }
 
+  // Inline version (for use directly in forms)
   if (inline) {
-    // Inline suggestion UI
     return (
       <div className="mt-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1 text-blue-600 dark:text-blue-400 h-7 px-2 text-xs"
-          onClick={() => setIsOpen(true)}
-          disabled={!text || text.length < 10}
-        >
-          <Wand2 className="h-3 w-3" />
-          {label}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1 text-blue-600 dark:text-blue-400 h-7 px-2 text-xs"
+            onClick={handleOneClickEnhance}
+            disabled={isLoading || !text || text.length < 10}
+          >
+            {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+            {label}
+          </Button>
 
-        {isOpen && (
+          <Tabs defaultValue="professional" value={selectedTone} onValueChange={setSelectedTone} className="h-7">
+            <TabsList className="h-7 p-0">
+              <TabsTrigger value="professional" className="text-xs h-7 px-2">
+                Professional
+              </TabsTrigger>
+              <TabsTrigger value="ats" className="text-xs h-7 px-2">
+                ATS
+              </TabsTrigger>
+              <TabsTrigger value="confident" className="text-xs h-7 px-2">
+                Confident
+              </TabsTrigger>
+              <TabsTrigger value="formal" className="text-xs h-7 px-2">
+                Formal
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {isLoading && (
+          <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-900 rounded-md">
+            <div className="flex flex-col items-center gap-2 w-full justify-center py-2">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
+                <span className="text-sm text-blue-800 dark:text-blue-300">Enhancing your text...</span>
+              </div>
+              <Progress value={progress} className="w-full h-1" />
+            </div>
+          </div>
+        )}
+
+        {error && !isLoading && (
+          <div className="mt-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded-md">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        )}
+
+        {showEnhanced && enhancedText && !isLoading && (
           <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-900 rounded-md animate-fade-in">
             <div className="flex items-start gap-2">
-              {isLoading ? (
-                <div className="flex items-center gap-2 w-full justify-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
-                  <span className="text-sm text-blue-800 dark:text-blue-300">Enhancing your text...</span>
-                </div>
-              ) : error ? (
-                <div className="text-sm text-red-600 dark:text-red-400 py-2">{error}</div>
-              ) : (
-                <div className="w-full">
-                  <div className="flex justify-between items-center mb-2">
-                    <Badge variant="outline" className="text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900">
-                      AI Enhanced
-                    </Badge>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 rounded-full"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <X className="h-3 w-3" />
-                        <span className="sr-only">Dismiss</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 rounded-full text-green-600"
-                        onClick={handleAccept}
-                      >
-                        <Check className="h-3 w-3" />
-                        <span className="sr-only">Accept</span>
-                      </Button>
-                    </div>
+              <div className="w-full">
+                <div className="flex justify-between items-center mb-2">
+                  <Badge variant="outline" className="text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900">
+                    AI Enhanced
+                  </Badge>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 rounded-full"
+                      onClick={() => setShowEnhanced(false)}
+                    >
+                      <X className="h-3 w-3" />
+                      <span className="sr-only">Dismiss</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 rounded-full text-green-600"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3 w-3" />
+                      <span className="sr-only">Accept</span>
+                    </Button>
                   </div>
-                  <p className="text-sm text-blue-800 dark:text-blue-300">{renderHighlightedText()}</p>
                 </div>
-              )}
+                <p className="text-sm text-blue-800 dark:text-blue-300">{renderHighlightedText()}</p>
+              </div>
             </div>
           </div>
         )}
@@ -302,7 +240,7 @@ export function MagicWriter({ text, onEnhance, inline = false, label = "✨ Magi
     )
   }
 
-  // Modal UI
+  // Dialog version (for more complex interactions)
   return (
     <>
       <Button
@@ -316,81 +254,75 @@ export function MagicWriter({ text, onEnhance, inline = false, label = "✨ Magi
         {label}
       </Button>
 
-      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-blue-500" />
-              Magic Writer
+              Magic Writer - One-Click Text Enhancement
             </DialogTitle>
           </DialogHeader>
 
-          <Tabs defaultValue="professional" value={selectedTone} onValueChange={setSelectedTone} className="mt-4">
-            <TabsList className="grid grid-cols-4 mb-4">
-              <TabsTrigger value="professional">Professional</TabsTrigger>
-              <TabsTrigger value="ats">ATS-Optimized</TabsTrigger>
-              <TabsTrigger value="concise">Concise</TabsTrigger>
-              <TabsTrigger value="confident">Confident</TabsTrigger>
-            </TabsList>
+          <div className="space-y-4 my-4">
+            <p className="text-sm text-muted-foreground">
+              Instantly enhance your resume text with AI. Choose a tone and click "Enhance" to improve grammar, clarity,
+              and professionalism.
+            </p>
 
-            <TabsContent value="professional">
-              <p className="text-sm text-muted-foreground mb-4">
-                Enhances your text with professional language and industry-standard terminology.
-              </p>
-            </TabsContent>
+            <div className="flex justify-between items-center">
+              <Tabs defaultValue="professional" value={selectedTone} onValueChange={setSelectedTone}>
+                <TabsList>
+                  <TabsTrigger value="professional">Professional</TabsTrigger>
+                  <TabsTrigger value="ats">ATS-Optimized</TabsTrigger>
+                  <TabsTrigger value="confident">Confident</TabsTrigger>
+                  <TabsTrigger value="formal">Formal</TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-            <TabsContent value="ats">
-              <p className="text-sm text-muted-foreground mb-4">
-                Optimizes your text for Applicant Tracking Systems by adding relevant keywords and metrics.
-              </p>
-            </TabsContent>
-
-            <TabsContent value="concise">
-              <p className="text-sm text-muted-foreground mb-4">
-                Makes your text more concise by removing filler words and simplifying complex phrases.
-              </p>
-            </TabsContent>
-
-            <TabsContent value="confident">
-              <p className="text-sm text-muted-foreground mb-4">
-                Transforms your language to sound more confident, decisive, and achievement-oriented.
-              </p>
-            </TabsContent>
-
-            <div className="space-y-4 mt-2">
-              <div className="p-4 border rounded-md bg-muted/30">
-                <h4 className="text-sm font-medium mb-2">Original Text</h4>
-                <p className="text-sm">{text || "No text provided."}</p>
-              </div>
-
-              <div className="p-4 border rounded-md bg-blue-50 dark:bg-blue-950/30">
-                <h4 className="text-sm font-medium mb-2 flex items-center justify-between">
-                  <span>Enhanced Text</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 gap-1"
-                    onClick={handleEnhance}
-                    disabled={isLoading || !text}
-                  >
-                    {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                    Regenerate
-                  </Button>
-                </h4>
-
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-8 gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm text-blue-800 dark:text-blue-300">Enhancing your text...</span>
-                  </div>
-                ) : error ? (
-                  <div className="text-sm text-red-600 dark:text-red-400 py-4">{error}</div>
-                ) : (
-                  <p className="text-sm">{renderHighlightedText()}</p>
-                )}
-              </div>
+              <Button onClick={handleOneClickEnhance} disabled={isLoading || !text} className="gap-2">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                Enhance Text
+              </Button>
             </div>
-          </Tabs>
+
+            <div className="p-4 border rounded-md bg-muted/30">
+              <h4 className="text-sm font-medium mb-2">Original Text</h4>
+              <p className="text-sm">{text || "No text provided."}</p>
+            </div>
+
+            {isLoading ? (
+              <div className="p-6 border rounded-md bg-blue-50 dark:bg-blue-950/30">
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+                  <p className="text-blue-800 dark:text-blue-300">Enhancing your text...</p>
+                  <div className="w-full max-w-xs">
+                    <Progress value={progress} className="h-2" />
+                    <p className="text-xs text-center mt-1 text-muted-foreground">{progress}%</p>
+                  </div>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="p-4 border rounded-md bg-red-50 dark:bg-red-950/30">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            ) : enhancedText ? (
+              <div className="p-4 border rounded-md bg-blue-50 dark:bg-blue-950/30">
+                <h4 className="text-sm font-medium mb-2">Enhanced Text</h4>
+                <p className="text-sm">{renderHighlightedText()}</p>
+              </div>
+            ) : null}
+
+            <div className="p-4 border rounded-md bg-muted/30">
+              <h4 className="text-sm font-medium mb-2">What Magic Writer Improves:</h4>
+              <ul className="text-sm space-y-1 list-disc pl-5">
+                <li>Fixes grammar and sentence structure</li>
+                <li>Improves clarity and professionalism</li>
+                <li>Optimizes for ATS and recruiter readability</li>
+                <li>Adjusts tone based on your selection</li>
+                <li>Enhances impact of your achievements</li>
+              </ul>
+            </div>
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOpen(false)}>
