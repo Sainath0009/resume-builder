@@ -142,7 +142,7 @@ export function MagicWriter({ text, onEnhance }) {
       ) : (
         <>
           <Sparkles className="h-4 w-4" />
-          AI Enhance
+          Enhance
         </>
       )}
     </Button>

@@ -52,6 +52,8 @@ import { generatePDF } from "../../lib/pdf-generator"
 import { Badge } from "../../components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../components/ui/tooltip"
 import { Input } from "../../components/ui/input"
+import { BatchEnhancer } from "../../components/batch-enhancer"
+import { KeywordTargeter } from "../../components/keyword-targeter"
 export default function Builder() {
   const router = useRouter()
   const searchParams = useSearchParams()
