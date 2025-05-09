@@ -52,8 +52,8 @@ import { generatePDF } from "../../lib/pdf-generator"
 import { Badge } from "../../components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../components/ui/tooltip"
 import { Input } from "../../components/ui/input"
-import { BatchEnhancer } from "../../components/batch-enhancer"
-import { KeywordTargeter } from "../../components/keyword-targeter"
+import { TemplateCustomizer } from "../../components/template-customizer"
+
 export default function Builder() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -63,7 +63,6 @@ export default function Builder() {
   const [validationErrors, setValidationErrors] = useState({})
   const [scale, setScale] = useState(0.7)
   const resumeRef = useRef(null)
-  const { toast } = useToast()
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
@@ -99,9 +98,8 @@ export default function Builder() {
 
   const handleSaveDraft = () => {
     localStorage.setItem("resumeData", JSON.stringify(resumeData))
-    toast({
+    toast.success("Your resume has been saved as a draft", {
       title: "Draft saved",
-      description: "Your resume has been saved as a draft",
     })
   }
 
@@ -113,10 +111,8 @@ export default function Builder() {
       setValidationErrors(errors)
 
       // Show toast with validation error
-      toast({
+      toast.error("Some required fields are missing or invalid", {
         title: "Please fix the following errors",
-        description: "Some required fields are missing or invalid",
-        variant: "destructive",
       })
 
       return
@@ -126,18 +122,16 @@ export default function Builder() {
 
     setIsGeneratingPDF(true)
 
-    toast({
+    toast.loading("Your resume is being prepared for download", {
       title: "Generating PDF",
-      description: "Your resume is being prepared for download",
     })
 
     try {
       // Use our custom PDF generator function
       await generatePDF(resumeRef.current, resumeData.personal.name || "resume")
 
-      toast({
+      toast.success("Your resume has been downloaded successfully", {
         title: "Download complete",
-        description: "Your resume has been downloaded successfully",
       })
     } catch (error) {
       console.error("PDF generation failed:", error)
@@ -149,10 +143,8 @@ export default function Builder() {
         errorMessage = "PDF generation failed due to color compatibility issues. We've fixed this - please try again."
       }
 
-      toast({
+      toast.error(errorMessage, {
         title: "Download failed",
-        description: errorMessage,
-        variant: "destructive",
       })
     } finally {
       setIsGeneratingPDF(false)
@@ -165,9 +157,8 @@ export default function Builder() {
 
     setIsProcessingAI(true)
 
-    toast({
+    toast.loading("Our AI is analyzing your uploaded resume...", {
       title: "Processing resume",
-      description: "Our AI is analyzing your uploaded resume...",
     })
 
     try {
@@ -176,18 +167,15 @@ export default function Builder() {
       if (aiData) {
         setResumeData(aiData)
 
-        toast({
+        toast.success("Your resume data has been extracted and filled in", {
           title: "Resume processed successfully",
-          description: "Your resume data has been extracted and filled in",
         })
       }
     } catch (error) {
       console.error("AI processing failed:", error)
 
-      toast({
+      toast.error("There was an error processing your resume. Please try again.", {
         title: "Processing failed",
-        description: "There was an error processing your resume. Please try again.",
-        variant: "destructive",
       })
     } finally {
       setIsProcessingAI(false)
@@ -212,10 +200,8 @@ export default function Builder() {
     } catch (error) {
       console.error("Error generating share link:", error)
 
-      toast({
+      toast.error("There was an error generating a share link. Please try again.", {
         title: "Share failed",
-        description: "There was an error generating a share link. Please try again.",
-        variant: "destructive",
       })
     } finally {
       setIsGeneratingShareLink(false)
@@ -225,9 +211,8 @@ export default function Builder() {
   const copyShareLink = () => {
     navigator.clipboard.writeText(shareLink)
 
-    toast({
+    toast.success("Share link copied to clipboard", {
       title: "Link copied",
-      description: "Share link copied to clipboard",
     })
   }
 
@@ -235,9 +220,8 @@ export default function Builder() {
     if (!shareEmail) return
 
     // In a real app, this would send an email with the share link
-    toast({
+    toast.success(`Share link sent to ${shareEmail}`, {
       title: "Email sent",
-      description: `Share link sent to ${shareEmail}`,
     })
 
     setShareEmail("")
@@ -389,6 +373,15 @@ export default function Builder() {
 
               <Tooltip>
                 <TooltipTrigger asChild>
+                  <div className="hidden sm:block">
+                    <TemplateCustomizer />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Customize colors and fonts</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
@@ -400,26 +393,6 @@ export default function Builder() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Import resume with AI</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleShareResume}
-                    className="gap-2 hidden sm:flex"
-                    disabled={isGeneratingShareLink}
-                  >
-                    {isGeneratingShareLink ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Share2 className="h-4 w-4" />
-                    )}
-                    Share
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Share your resume</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -671,12 +644,8 @@ export default function Builder() {
                       <h3 className="font-medium text-blue-700 dark:text-blue-300 mb-1">AI Assistant Enabled</h3>
                       <p className="text-sm text-muted-foreground mb-3">
                         Our AI will help you create a professional resume by suggesting improvements and enhancing your
-                        content.
+                        content. Use the "Enhance" button next to text fields to improve your content.
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        <BatchEnhancer />
-                        <KeywordTargeter />
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -802,3 +771,4 @@ export default function Builder() {
     </div>
   )
 }
+
