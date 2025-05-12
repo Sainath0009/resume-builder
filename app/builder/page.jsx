@@ -71,26 +71,28 @@ export default function Builder() {
   const [validationErrors, setValidationErrors] = useState({})
   const [scale, setScale] = useState(0.7)
   const resumeRef = useRef(null)
+  const { toast } = useToast()
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
-  const [showAIUploadDialog, setShowAIUploadDialog] = useState(false)
-  const [isProcessingAI, setIsProcessingAI] = useState(false)
-  const [showShareDialog, setShowShareDialog] = useState(false)
-  const [shareLink, setShareLink] = useState("")
-  const [isGeneratingShareLink, setIsGeneratingShareLink] = useState(false)
+  const [isEnhancingResume, setIsEnhancingResume] = useState(false)
 
-  // Load template from URL parameter
   useEffect(() => {
-    const templateId = searchParams.get("template")
-    if (templateId && templateId !== resumeData.selectedTemplate) {
+    const templateId = searchParams.get("template") || "modern"
+
+    // Only update if the template has actually changed
+    if (selectedTemplate !== templateId) {
       setSelectedTemplate(templateId)
-      setResumeData((prev) => ({
-        ...prev,
-        selectedTemplate: templateId,
-      }))
+
+      // Only update resumeData if the selected template is different
+      if (resumeData.selectedTemplate !== templateId) {
+        setResumeData((prev) => ({
+          ...prev,
+          selectedTemplate: templateId,
+        }))
+      }
     }
-  }, [searchParams, setResumeData, resumeData.selectedTemplate])
+  }, [searchParams, resumeData.selectedTemplate])
 
   const handleTemplateSelect = (templateId) => {
     setSelectedTemplate(templateId)
@@ -103,21 +105,21 @@ export default function Builder() {
 
   const handleSaveDraft = () => {
     localStorage.setItem("resumeData", JSON.stringify(resumeData))
-    toast.success("Your resume has been saved as a draft", {
+    toast({
       title: "Draft saved",
+      description: "Your resume has been saved as a draft",
     })
   }
 
   const handleDownloadPDF = async () => {
-    // Validate data before download
     const errors = validateResumeData(resumeData)
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors)
-
-      // Show toast with validation error
-      toast.error("Some required fields are missing or invalid", {
+      toast({
         title: "Please fix the following errors",
+        description: "Some required fields are missing or invalid",
+        variant: "destructive",
       })
 
       return
@@ -127,89 +129,109 @@ export default function Builder() {
 
     setIsGeneratingPDF(true)
 
-    toast.loading("Your resume is being prepared for download", {
+    toast({
       title: "Generating PDF",
+      description: "Your resume is being prepared for download",
     })
 
     try {
-      // Use our custom PDF generator function
       await generatePDF(resumeRef.current, resumeData.personal.name || "resume")
 
-      toast.success("Your resume has been downloaded successfully", {
+      toast({
         title: "Download complete",
+        description: "Your resume has been downloaded successfully",
       })
     } catch (error) {
       console.error("PDF generation failed:", error)
 
-      // Provide a more helpful error message
-      let errorMessage = "There was an error generating your PDF. Please try again."
-
-      if (error.message && error.message.includes("oklch")) {
-        errorMessage = "PDF generation failed due to color compatibility issues. We've fixed this - please try again."
-      }
-
-      toast.error(errorMessage, {
+      toast({
         title: "Download failed",
+        description: "There was an error generating your PDF. Please try again.",
+        variant: "destructive",
       })
     } finally {
       setIsGeneratingPDF(false)
     }
   }
 
-  const handleAIUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+  const handleEnhanceFullResume = async () => {
+    if (!resumeData.personal.name || !resumeData.personal.email) {
+      toast.error("Please fill in at least your name and email before enhancing your resume")
+      return
+    }
 
-    setIsProcessingAI(true)
-
-    toast.loading("Our AI is analyzing your uploaded resume...", {
-      title: "Processing resume",
-    })
+    setIsEnhancingResume(true)
+    toast.loading("✨ Enhancing your entire resume...")
 
     try {
-      const aiData = await aiService.autoFillFromUpload(file)
+      // Create a copy of the resume data to work with
+      const enhancedData = { ...resumeData }
 
-      if (aiData) {
-        setResumeData(aiData)
-
-        toast.success("Your resume data has been extracted and filled in", {
-          title: "Resume processed successfully",
-        })
+      // Enhance personal summary if it exists
+      if (enhancedData.personal.summary) {
+        enhancedData.personal.summary = await enhanceText(enhancedData.personal.summary, "summary")
       }
-    } catch (error) {
-      console.error("AI processing failed:", error)
 
-      toast.error("There was an error processing your resume. Please try again.", {
-        title: "Processing failed",
-      })
+      // Enhance career objective if it exists
+      if (enhancedData.personal.objective) {
+        enhancedData.personal.objective = await enhanceText(enhancedData.personal.objective, "objective")
+      }
+
+      // Enhance experience descriptions
+      if (enhancedData.experience && enhancedData.experience.length > 0) {
+        for (let i = 0; i < enhancedData.experience.length; i++) {
+          if (enhancedData.experience[i].description) {
+            enhancedData.experience[i].description = await enhanceText(
+              enhancedData.experience[i].description,
+              "experience",
+            )
+          }
+        }
+      }
+
+      // Enhance project descriptions
+      if (enhancedData.projects && enhancedData.projects.length > 0) {
+        for (let i = 0; i < enhancedData.projects.length; i++) {
+          if (enhancedData.projects[i].description) {
+            enhancedData.projects[i].description = await enhanceText(enhancedData.projects[i].description, "project")
+          }
+        }
+      }
+
+      // Enhance education descriptions
+      if (enhancedData.education && enhancedData.education.length > 0) {
+        for (let i = 0; i < enhancedData.education.length; i++) {
+          if (enhancedData.education[i].description) {
+            enhancedData.education[i].description = await enhanceText(
+              enhancedData.education[i].description,
+              "education",
+            )
+          }
+        }
+      }
+
+      // Update the resume data with enhanced content
+      setResumeData(enhancedData)
+
+      toast.success("✨ Resume enhanced successfully!")
+    } catch (error) {
+      console.error("Error enhancing resume:", error)
+      toast.error("Failed to enhance resume. Please try again.")
     } finally {
-      setIsProcessingAI(false)
-      setShowAIUploadDialog(false)
+      setIsEnhancingResume(false)
     }
   }
 
-  const handleShareResume = async () => {
-    setIsGeneratingShareLink(true)
-
-    try {
-      // In a real app, this would create a shareable link by saving the resume data to a database
-      // and generating a unique URL
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Generate a random ID for the share link
-      const shareId = Math.random().toString(36).substring(2, 15)
-      const shareUrl = `${window.location.origin}/shared/${shareId}`
-
-      setShareLink(shareUrl)
-      setShowShareDialog(true)
-    } catch (error) {
-      console.error("Error generating share link:", error)
-
-      toast.error("There was an error generating a share link. Please try again.", {
-        title: "Share failed",
-      })
-    } finally {
-      setIsGeneratingShareLink(false)
+  const renderTemplate = () => {
+    switch (resumeData.selectedTemplate) {
+      case "modern":
+        return <ModernTemplate data={resumeData} />
+      case "minimal":
+        return <MinimalTemplate data={resumeData} />
+      case "professional":
+        return <ProfessionalTemplate data={resumeData} />
+      default:
+        return <ModernTemplate data={resumeData} />
     }
   }
 
@@ -219,82 +241,242 @@ export default function Builder() {
   }
 
   const sections = [
-    { id: "personal", label: "Personal", icon: <User className="h-4 w-4" /> },
+    { id: "personal", label: "Personal Info", icon: <User className="h-4 w-4" /> },
     { id: "education", label: "Education", icon: <GraduationCap className="h-4 w-4" /> },
     { id: "experience", label: "Experience", icon: <Briefcase className="h-4 w-4" /> },
     { id: "skills", label: "Skills", icon: <Lightbulb className="h-4 w-4" /> },
+    { id: "certifications", label: "Certifications", icon: <Award className="h-4 w-4" /> },
     { id: "projects", label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
-    { id: "certifications", label: "Certificates", icon: <Award className="h-4 w-4" /> },
   ]
 
   if (isFullScreenPreview) {
     return (
-      <FullScreenPreview
-        resumeData={resumeData}
-        scale={scale}
-        setScale={setScale}
-        setIsFullScreenPreview={setIsFullScreenPreview}
-        handleDownloadPDF={handleDownloadPDF}
-        isGeneratingPDF={isGeneratingPDF}
-      />
+      <div className="fixed inset-0 bg-background z-50 flex flex-col animate-fade-in">
+        <div className="bg-card border-b p-4 flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Resume Preview</h2>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-secondary rounded-md px-2 py-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
+                disabled={scale <= 0.5}
+                aria-label="Zoom out"
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium w-12 text-center">{Math.round(scale * 100)}%</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setScale((prev) => Math.min(1.5, prev + 0.1))}
+                disabled={scale >= 1.5}
+                aria-label="Zoom in"
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleDownloadPDF}
+              className="gap-2"
+              disabled={isGeneratingPDF}
+              aria-label="Download PDF"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsFullScreenPreview(false)}
+              aria-label="Close preview"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-auto bg-secondary/30 p-8 flex justify-center">
+          <div
+            className="bg-white paper-effect mx-auto transition-transform"
+            style={{
+              width: "210mm",
+              transform: `scale(${scale})`,
+              transformOrigin: "top center",
+              minHeight: "297mm",
+            }}
+            ref={resumeRef}
+          >
+            {renderTemplate()}
+          </div>
+        </div>
+      </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
-      {/* Header */}
-      {/* <BuilderHeader
-        selectedTemplate={selectedTemplate}
-        getTemplateDisplayName={getTemplateDisplayName}
-        handleSaveDraft={handleSaveDraft}
-        handleDownloadPDF={handleDownloadPDF}
-        isGeneratingPDF={isGeneratingPDF}
-        setShowTemplateSelector={setShowTemplateSelector}
-        setShowAIUploadDialog={setShowAIUploadDialog}
-      /> */}
+      <header className="bg-card border-b sticky top-0 z-10 transition-colors duration-300">
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+          <div className="flex items-center">
+            <Link href="/" className="text-lg font-semibold">
+              Resume Builder
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTemplateSelector(true)}
+              className="gap-2 hidden sm:flex"
+              aria-label="Change template"
+            >
+              <Palette className="h-4 w-4" />
+              {getTemplateDisplayName(selectedTemplate)}
+            </Button>
 
-      {/* Dialogs */}
-      <TemplateSelector
-        open={showTemplateSelector}
-        onOpenChange={setShowTemplateSelector}
-        templates={templates}
-        selectedTemplate={selectedTemplate}
-        onSelectTemplate={handleTemplateSelect}
-      />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEnhanceFullResume}
+              className="gap-2 hidden sm:flex"
+              disabled={isEnhancingResume}
+              aria-label="Enhance resume"
+            >
+              {isEnhancingResume ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+              Magic Writer
+            </Button>
 
-      {/* <AIUploadDialog
-        open={showAIUploadDialog}
-        onOpenChange={setShowAIUploadDialog}
-        onUpload={handleAIUpload}
-        isProcessing={isProcessingAI}
-      /> */}
+            <Button variant="outline" size="icon" onClick={handleSaveDraft} aria-label="Save draft">
+              <Save className="h-4 w-4" />
+            </Button>
 
-      {/* <ShareDialog open={showShareDialog} onOpenChange={setShowShareDialog} shareLink={shareLink} /> */}
+            <Button
+              size="sm"
+              onClick={handleDownloadPDF}
+              className="gap-2"
+              disabled={isGeneratingPDF}
+              aria-label="Download PDF"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="hidden sm:inline">Generating...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  <span className="hidden sm:inline">Download</span>
+                </>
+              )}
+            </Button>
 
-      {/* Main Content - Split Layout */}
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+      <Dialog open={showTemplateSelector} onOpenChange={setShowTemplateSelector}>
+        <DialogContent className="sm:max-w-[800px]">
+          <h2 className="text-xl font-semibold mb-4">Choose a Template</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {templates.map((template) => (
+              <div
+                key={template.id}
+                className={cn(
+                  "group relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all hover:shadow-md",
+                  selectedTemplate === template.id ? "border-primary" : "border-border hover:border-primary/50",
+                )}
+                onClick={() => handleTemplateSelect(template.id)}
+              >
+                <div className="relative h-48 w-full overflow-hidden">
+                  <Image
+                    src={template.thumbnail || "/placeholder.svg?height=192&width=300"}
+                    alt={template.name}
+                    fill
+                    className="object-cover transition-transform group-hover:scale-105"
+                  />
+                  {selectedTemplate === template.id && (
+                    <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                      <div className="bg-primary text-primary-foreground rounded-full p-2">
+                        <Check className="h-6 w-6" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3">
+                  <h3 className="font-medium text-center">{template.name}</h3>
+                  <p className="text-center text-sm text-muted-foreground">{template.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="container mx-auto px-4 py-6">
-        <div className="split-layout">
-          {/* Left Side - Form */}
-          <div className="form-section animate-fade-in">
-            <div className="bg-card rounded-lg border shadow-sm p-6 transition-colors duration-300 h-full">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-1/2 animate-fade-in">
+            <div className="bg-card rounded-lg border p-6 transition-colors duration-300">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">Resume Builder</h2>
                   <div className="hidden sm:block">
-                    {/* <FormNavigation sections={sections} activeTab={activeTab} setActiveTab={setActiveTab} /> */}
+                    <TabsList className="grid grid-cols-3 sm:grid-cols-6 gap-1">
+                      {sections.map((section) => (
+                        <TabsTrigger key={section.id} value={section.id} className="flex flex-col gap-1 py-2 h-auto">
+                          {section.icon}
+                          <span className="text-xs">{section.label}</span>
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
                   </div>
                   <div className="sm:hidden">
-                    {/* <FormNavigation
-                      sections={sections}
-                      activeTab={activeTab}
-                      setActiveTab={setActiveTab}
-                      isMobile={true}
-                    /> */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const currentIndex = sections.findIndex((section) => section.id === activeTab)
+                          if (currentIndex > 0) {
+                            setActiveTab(sections[currentIndex - 1].id)
+                          }
+                        }}
+                        disabled={activeTab === sections[0].id}
+                        aria-label="Previous section"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm font-medium">
+                        {sections.findIndex((section) => section.id === activeTab) + 1} / {sections.length}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const currentIndex = sections.findIndex((section) => section.id === activeTab)
+                          if (currentIndex < sections.length - 1) {
+                            setActiveTab(sections[currentIndex + 1].id)
+                          }
+                        }}
+                        disabled={activeTab === sections[sections.length - 1].id}
+                        aria-label="Next section"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-
-                {/* AI Tools Banner */}
-                {/* <AIToolsBanner /> */}
 
                 <div className="mt-4">
                   <TabsContent value="personal" className="animate-slide-in">
@@ -330,7 +512,7 @@ export default function Builder() {
                     className="gap-2"
                     aria-label="Previous section"
                   >
-                    Previous
+                    <ChevronLeft className="h-4 w-4" /> Previous
                   </Button>
                   <Button
                     onClick={() => {
@@ -343,13 +525,12 @@ export default function Builder() {
                     className="gap-2"
                     aria-label="Next section"
                   >
-                    Next
+                    Next <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </Tabs>
             </div>
 
-            {/* Mobile Preview Button */}
             <div className="lg:hidden mt-6">
               <Button
                 variant="outline"
@@ -361,15 +542,54 @@ export default function Builder() {
               </Button>
             </div>
           </div>
-
-          {/* Right Side - Preview */}
-          <div className="hidden lg:block preview-section animate-fade-in">
-            <ResumePreview
-              resumeData={resumeData}
-              scale={scale}
-              setScale={setScale}
-              setIsFullScreenPreview={setIsFullScreenPreview}
-            />
+          <div className="hidden lg:block lg:w-1/2 animate-fade-in">
+            <div className="bg-card rounded-lg border p-6 sticky top-20 transition-colors duration-300">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Live Preview</h2>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
+                    disabled={scale <= 0.5}
+                    aria-label="Zoom out"
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm">{Math.round(scale * 100)}%</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setScale((prev) => Math.min(1, prev + 0.1))}
+                    disabled={scale >= 1}
+                    aria-label="Zoom in"
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="bg-secondary/30 rounded-lg flex justify-center transition-colors duration-300">
+                <ScrollArea className="h-[calc(100vh-220px)] w-full">
+                  <div
+                    className="bg-white paper-effect mx-auto transition-transform origin-top"
+                    style={{
+                      width: "210mm",
+                      transform: `scale(${scale})`,
+                      transformOrigin: "top center",
+                      minHeight: "297mm",
+                    }}
+                    ref={resumeRef}
+                  >
+                    {renderTemplate()}
+                  </div>
+                </ScrollArea>
+              </div>
+              <div className="flex justify-center mt-4">
+                <Button onClick={() => setIsFullScreenPreview(true)} className="gap-2" aria-label="Full screen preview">
+                  <Maximize2 className="h-4 w-4" /> Full Screen Preview
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
