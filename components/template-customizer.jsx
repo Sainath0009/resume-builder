@@ -8,7 +8,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
 import { Palette, Type } from "lucide-react"
 import { toast } from "sonner"
 
-// Available color schemes
 const colorSchemes = [
   { id: "blue", name: "Blue", primary: "bg-blue-600", secondary: "bg-blue-100", text: "text-blue-600" },
   { id: "green", name: "Green", primary: "bg-green-600", secondary: "bg-green-100", text: "text-green-600" },
@@ -20,7 +19,7 @@ const colorSchemes = [
   { id: "indigo", name: "Indigo", primary: "bg-indigo-600", secondary: "bg-indigo-100", text: "text-indigo-600" },
 ]
 
-// Available fonts
+
 const fontOptions = [
   { id: "sans", name: "Sans", class: "font-sans" },
   { id: "serif", name: "Serif", class: "font-serif" },
@@ -34,7 +33,6 @@ export function TemplateCustomizer() {
   const [selectedFont, setSelectedFont] = useState(resumeData.themeFont || "sans")
   const [activeTab, setActiveTab] = useState("colors")
 
-  // Initialize theme settings from resumeData if they exist
   useEffect(() => {
     if (resumeData.themeColor) {
       setSelectedColor(resumeData.themeColor)

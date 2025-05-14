@@ -17,7 +17,6 @@ import { useResumeContext } from "../../context/resume-provider"
 import { templates } from "../../lib/templates"
 import { ThemeToggle } from "../../components/theme-toggle"
 import { cn } from "../../lib/utils"
-import { DayPickerProvider } from 'react-day-picker';
 
 
 
@@ -62,6 +61,8 @@ import { KeywordTargeter } from "../../components/keyword-targeter"
 import { TemplateSelector } from "../../components/template-selector"
 import { ResumePreview } from "../../components/resume-preview"
 import { FullScreenPreview } from "../../components/full-screen-preview"
+import { TemplateContext } from "next/dist/shared/lib/app-router-context.shared-runtime"
+import { TemplateCustomizer } from "../../components/template-customizer"
 export default function Builder() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -346,7 +347,7 @@ export default function Builder() {
               <Palette className="h-4 w-4" />
               {getTemplateDisplayName(selectedTemplate)}
             </Button>
-
+            <TemplateCustomizer/>
             <Button
               variant="outline"
               size="sm"
