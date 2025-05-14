@@ -1,181 +1,242 @@
-"use client"
-
 export default function MinimalTemplate({ data }) {
-  const { personal, experience, education, skills, projects, certifications, customization, sectionOrder } = data
+  const {
+    personal,
+    education,
+    experience,
+    skills,
+    projects,
+    certifications,
+    themeColor = "blue",
+    themeFont = "sans",
+    sectionOrder,
+  } = data
 
-  // Default section order if not provided
-  const order = sectionOrder || ["experience", "education", "skills", "projects", "certifications"]
-
-  // Render sections in the specified order
-  const renderSections = () => {
-    return order.map((section) => {
-      switch (section) {
-        case "experience":
-          return experience && experience.length > 0 ? renderExperience() : null
-        case "education":
-          return education && education.length > 0 ? renderEducation() : null
-        case "skills":
-          return skills && skills.length > 0 ? renderSkills() : null
-        case "projects":
-          return projects && projects.length > 0 ? renderProjects() : null
-        case "certifications":
-          return certifications && certifications.length > 0 ? renderCertifications() : null
-        default:
-          return null
-      }
-    })
+  const getColorClasses = () => {
+    switch (themeColor) {
+      case "green":
+        return { accent: "text-green-600", heading: "text-green-700" }
+      case "purple":
+        return { accent: "text-purple-600", heading: "text-purple-700" }
+      case "red":
+        return { accent: "text-red-600", heading: "text-red-700" }
+      case "gray":
+        return { accent: "text-gray-600", heading: "text-gray-700" }
+      case "teal":
+        return { accent: "text-teal-600", heading: "text-teal-700" }
+      case "amber":
+        return { accent: "text-amber-600", heading: "text-amber-700" }
+      case "indigo":
+        return { accent: "text-indigo-600", heading: "text-indigo-700" }
+      default:
+        return { accent: "text-blue-600", heading: "text-blue-700" }
+    }
   }
 
-  const renderExperience = () => (
-    <section className="mb-6">
-      <h2 className="text-base font-medium mb-3 text-gray-800">Professional Experience</h2>
-      <div className="space-y-4">
-        {experience.map((exp) => (
-          <div key={exp.id} className="mb-2">
-            <div className="flex justify-between items-start">
-              <h3 className="font-medium text-sm">{exp.position}</h3>
-              <span className="text-xs text-gray-500">
-                {exp.startDate} - {exp.endDate || "Present"}
-              </span>
-            </div>
-            <p className="text-sm text-gray-700">{exp.company}</p>
-            <p className="text-xs text-gray-500">{exp.location}</p>
-            <ul className="mt-1 text-xs space-y-1">
-              {exp.description.split("\n").map((item, index) => (
-                <li key={index} className="pl-4 relative">
-                  <span className="absolute left-0 top-2 w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
+  const colorClasses = getColorClasses()
+  const fontClass = themeFont === "serif" ? "font-serif" : themeFont === "mono" ? "font-mono" : "font-sans"
 
-  const renderEducation = () => (
-    <section className="mb-6">
-      <h2 className="text-base font-medium mb-3 text-gray-800">Education</h2>
-      <div className="space-y-4">
-        {education.map((edu) => (
-          <div key={edu.id} className="mb-2">
-            <div className="flex justify-between items-start">
-              <h3 className="font-medium text-sm">{edu.degree}</h3>
-              <span className="text-xs text-gray-500">
-                {edu.startDate} - {edu.endDate}
-              </span>
-            </div>
-            <p className="text-sm text-gray-700">{edu.institution}</p>
-            <p className="text-xs text-gray-500">{edu.location}</p>
-            {edu.gpa && <p className="text-xs">GPA: {edu.gpa}</p>}
-          </div>
-        ))}
-      </div>
-    </section>
-  )
+  const defaultSectionOrder = [
+    { id: "summary", name: "Professional Summary" },
+    { id: "experience", name: "Work Experience" },
+    { id: "education", name: "Education" },
+    { id: "skills", name: "Skills" },
+    { id: "projects", name: "Projects" },
+    { id: "certifications", name: "Certifications" },
+  ]
 
-  const renderSkills = () => (
-    <section className="mb-6">
-      <h2 className="text-base font-medium mb-3 text-gray-800">Key Skills</h2>
-      <div className="grid grid-cols-1 gap-4">
-        {skills.map((category) => (
-          <div key={category.id}>
-            <h3 className="text-sm font-medium mb-2">{category.category}</h3>
-            <div className="space-y-2">
-              {category.skills.map((skill, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <div className="w-24 text-xs">{skill}</div>
-                  <div className="flex-1 h-2 bg-gray-200 rounded-full">
-                    <div
-                      className="bg-[#1e3a8a] h-2 rounded-full"
-                      style={{ width: `${Math.random() * 40 + 60}%` }}
-                    ></div>
+  const sectionsOrder = sectionOrder || defaultSectionOrder
+
+  const renderSection = (sectionId) => {
+    switch (sectionId) {
+      case "summary":
+        return (
+          personal.summary && (
+            <section className="mb-6">
+              <p className="text-sm text-center">{personal.summary}</p>
+            </section>
+          )
+        )
+      case "experience":
+        return (
+          experience.length > 0 &&
+          experience[0].company && (
+            <section className="mb-6">
+              <h2 className={`text-lg font-semibold uppercase tracking-wider mb-3 ${colorClasses.heading}`}>
+                Experience
+              </h2>
+              {experience.map((exp, index) => (
+                <div key={index} className="mb-4">
+                  <div className="flex justify-between items-baseline">
+                    <h3 className="text-base font-medium">{exp.position}</h3>
+                    <span className="text-sm text-gray-600">
+                      {exp.startDate &&
+                        new Date(exp.startDate).toLocaleDateString("en-US", { year: "numeric", month: "short" })}{" "}
+                      -{" "}
+                      {exp.current
+                        ? "Present"
+                        : exp.endDate &&
+                          new Date(exp.endDate).toLocaleDateString("en-US", { year: "numeric", month: "short" })}
+                    </span>
                   </div>
+                  <p className="text-sm font-medium text-gray-700">
+                    {exp.company}, {exp.location}
+                  </p>
+                  {exp.description && <p className="text-sm mt-1">{exp.description}</p>}
                 </div>
               ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-
-  const renderProjects = () => (
-    <section className="mb-6">
-      <h2 className="text-base font-medium mb-3 text-gray-800">Projects</h2>
-      <div className="space-y-3">
-        {projects.map((project) => (
-          <div key={project.id} className="mb-2">
-            <div className="flex justify-between items-start">
-              <h3 className="font-medium text-sm">{project.title}</h3>
-              {(project.startDate || project.endDate) && (
-                <span className="text-xs text-gray-500">
-                  {project.startDate} {project.endDate && `- ${project.endDate}`}
-                </span>
-              )}
-            </div>
-            {project.technologies && <p className="text-xs text-gray-700">{project.technologies}</p>}
-            <ul className="mt-1 text-xs space-y-1">
-              {project.description.split("\n").map((item, index) => (
-                <li key={index} className="pl-4 relative">
-                  <span className="absolute left-0 top-2 w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                  {item}
-                </li>
+            </section>
+          )
+        )
+      case "projects":
+        return (
+          projects.length > 0 &&
+          projects[0].name && (
+            <section className="mb-6">
+              <h2 className={`text-lg font-semibold uppercase tracking-wider mb-3 ${colorClasses.heading}`}>
+                Projects
+              </h2>
+              {projects.map((project, index) => (
+                <div key={index} className="mb-4">
+                  <div className="flex justify-between items-baseline">
+                    <h3 className="text-base font-medium">{project.name}</h3>
+                    <span className="text-sm text-gray-600">
+                      {project.startDate &&
+                        new Date(project.startDate).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                        })}{" "}
+                      -{" "}
+                      {project.endDate &&
+                        new Date(project.endDate).toLocaleDateString("en-US", { year: "numeric", month: "short" })}
+                    </span>
+                  </div>
+                  {project.technologies && (
+                    <p className="text-sm font-medium text-gray-700">Technologies: {project.technologies}</p>
+                  )}
+                  {project.link && <p className={`text-sm ${colorClasses.accent}`}>{project.link}</p>}
+                  {project.description && <p className="text-sm mt-1">{project.description}</p>}
+                </div>
               ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-
-  const renderCertifications = () => (
-    <section className="mb-6">
-      <h2 className="text-base font-medium mb-3 text-gray-800">Certifications</h2>
-      <div className="space-y-2">
-        {certifications.map((cert) => (
-          <div key={cert.id} className="mb-2">
-            <h3 className="font-medium text-sm">{cert.title}</h3>
-            <p className="text-xs text-gray-700">{cert.issuer}</p>
-            {cert.date && <p className="text-xs text-gray-500">{cert.date}</p>}
-          </div>
-        ))}
-      </div>
-    </section>
-  )
+            </section>
+          )
+        )
+      case "certifications":
+        return (
+          certifications.length > 0 &&
+          certifications[0].name && (
+            <section className="mb-6">
+              <h2 className={`text-lg font-semibold uppercase tracking-wider mb-3 ${colorClasses.heading}`}>
+                Certifications
+              </h2>
+              {certifications.map((cert, index) => (
+                <div key={index} className="mb-4">
+                  <div className="flex justify-between items-baseline">
+                    <h3 className="text-base font-medium">{cert.name}</h3>
+                    <span className="text-sm text-gray-600">
+                      {cert.date &&
+                        new Date(cert.date).toLocaleDateString("en-US", { year: "numeric", month: "short" })}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">{cert.issuer}</p>
+                  {cert.url && <p className={`text-sm ${colorClasses.accent}`}>{cert.url}</p>}
+                </div>
+              ))}
+            </section>
+          )
+        )
+      case "education":
+        return (
+          education.length > 0 &&
+          education[0].institution && (
+            <section className="mb-6">
+              <h2 className={`text-lg font-semibold uppercase tracking-wider mb-3 ${colorClasses.heading}`}>
+                Education
+              </h2>
+              {education.map((edu, index) => (
+                <div key={index} className="mb-4">
+                  <h3 className="text-base font-medium">
+                    {edu.degree} {edu.field && `in ${edu.field}`}
+                  </h3>
+                  <p className="text-sm font-medium text-gray-700">{edu.institution}</p>
+                  <p className="text-sm text-gray-600">
+                    {edu.startDate &&
+                      new Date(edu.startDate).toLocaleDateString("en-US", { year: "numeric", month: "short" })}{" "}
+                    -{" "}
+                    {edu.endDate &&
+                      new Date(edu.endDate).toLocaleDateString("en-US", { year: "numeric", month: "short" })}
+                  </p>
+                  {edu.description && <p className="text-sm mt-1">{edu.description}</p>}
+                </div>
+              ))}
+            </section>
+          )
+        )
+      case "skills":
+        return (
+          <section>
+            <h2 className={`text-lg font-semibold uppercase tracking-wider mb-3 ${colorClasses.heading}`}>Skills</h2>
+            {skills.technical.length > 0 && (
+              <div className="mb-3">
+                <h3 className="text-sm font-medium mb-1">Technical Skills</h3>
+                <p className="text-sm">{skills.technical.join(", ")}</p>
+              </div>
+            )}
+            {skills.soft.length > 0 && (
+              <div className="mb-3">
+                <h3 className="text-sm font-medium mb-1">Soft Skills</h3>
+                <p className="text-sm">{skills.soft.join(", ")}</p>
+              </div>
+            )}
+            {skills.languages.length > 0 && (
+              <div className="mb-3">
+                <h3 className="text-sm font-medium mb-1">Languages</h3>
+                <p className="text-sm">{skills.languages.join(", ")}</p>
+              </div>
+            )}
+          </section>
+        )
+      default:
+        return null
+    }
+  }
 
   return (
-    <div className="max-w-[210mm] mx-auto bg-white text-gray-800">
+    <div className={`p-8 text-gray-800 max-w-4xl mx-auto ${fontClass}`}>
       {/* Header */}
-      <header className="bg-[#1e3a8a] text-white p-4">
-        <div className="text-center">
-          <h1 className="text-xl font-medium">{personal.name || "Your Name"}</h1>
-          <p className="text-sm">{personal.title || "Professional Title"}</p>
-        </div>
-      </header>
+      <header className="text-center mb-8">
+        <h1 className={`text-3xl font-bold mb-2 ${colorClasses.heading} ${fontClass}`}>
+          {personal.name || "Your Name"}
+        </h1>
 
-      {/* Contact Info Bar */}
-      <div className="bg-gray-100 py-2 px-4 text-center text-xs">
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="flex flex-wrap justify-center gap-4 text-sm">
           {personal.email && <span>{personal.email}</span>}
           {personal.phone && <span>{personal.phone}</span>}
           {personal.location && <span>{personal.location}</span>}
           {personal.website && <span>{personal.website}</span>}
+          {personal.linkedin && <span>{personal.linkedin}</span>}
+          {personal.github && <span>{personal.github}</span>}
         </div>
-      </div>
+      </header>
 
       {/* Summary */}
-      {personal.summary && (
-        <section className="p-4 border-b border-gray-200">
-          <p className="text-sm">{personal.summary}</p>
-        </section>
-      )}
+      {renderSection("summary")}
 
-      {/* Main Content */}
-      <div className="p-4">
-        {/* Render all sections in the specified order */}
-        {renderSections()}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2">
+          {sectionsOrder
+            .filter((section) => ["experience", "projects", "certifications"].includes(section.id))
+            .map((section) => (
+              <div key={section.id}>{renderSection(section.id)}</div>
+            ))}
+        </div>
+
+        <div>
+          {sectionsOrder
+            .filter((section) => ["education", "skills"].includes(section.id))
+            .map((section) => (
+              <div key={section.id}>{renderSection(section.id)}</div>
+            ))}
+        </div>
       </div>
     </div>
   )

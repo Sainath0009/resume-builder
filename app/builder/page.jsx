@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
-
 import { Button } from "../../components/ui/button"
 import { Dialog, DialogContent } from "../../components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
@@ -17,9 +16,7 @@ import { useResumeContext } from "../../context/resume-provider"
 import { templates } from "../../lib/templates"
 import { ThemeToggle } from "../../components/theme-toggle"
 import { cn } from "../../lib/utils"
-
-
-
+import { toast } from "sonner"
 import {
   Download,
   Save,
@@ -46,23 +43,16 @@ import {
   Mail,
 } from "lucide-react"
 import Link from "next/link"
-import { useToast } from "../../hooks/use-toast"
+import { TemplateSelector } from "../../components/template-selector"
+
 import { validateResumeData } from "../../lib/validation"
 import ModernTemplate from "../../components/templates/modern-template"
 import MinimalTemplate from "../../components/templates/minimal-template"
 import ProfessionalTemplate from "../../components/templates/professional-template"
 import { ScrollArea } from "../../components/ui/scroll-area"
 import { generatePDF } from "../../lib/pdf-generator"
-import { Badge } from "../../components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../components/ui/tooltip"
-import { Input } from "../../components/ui/input"
-import { BatchEnhancer } from "../../components/batch-enhancer"
-import { KeywordTargeter } from "../../components/keyword-targeter"
-import { TemplateSelector } from "../../components/template-selector"
-import { ResumePreview } from "../../components/resume-preview"
-import { FullScreenPreview } from "../../components/full-screen-preview"
-import { TemplateContext } from "next/dist/shared/lib/app-router-context.shared-runtime"
 import { TemplateCustomizer } from "../../components/template-customizer"
+
 export default function Builder() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -72,7 +62,6 @@ export default function Builder() {
   const [validationErrors, setValidationErrors] = useState({})
   const [scale, setScale] = useState(0.7)
   const resumeRef = useRef(null)
-  const { toast } = useToast()
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
@@ -80,12 +69,8 @@ export default function Builder() {
 
   useEffect(() => {
     const templateId = searchParams.get("template") || "modern"
-
-    // Only update if the template has actually changed
     if (selectedTemplate !== templateId) {
       setSelectedTemplate(templateId)
-
-      // Only update resumeData if the selected template is different
       if (resumeData.selectedTemplate !== templateId) {
         setResumeData((prev) => ({
           ...prev,
@@ -102,14 +87,12 @@ export default function Builder() {
       selectedTemplate: templateId,
     }))
     setShowTemplateSelector(false)
+    toast.success("Template changed successfully")
   }
 
   const handleSaveDraft = () => {
     localStorage.setItem("resumeData", JSON.stringify(resumeData))
-    toast({
-      title: "Draft saved",
-      description: "Your resume has been saved as a draft",
-    })
+    toast.success("Draft saved successfully")
   }
 
   const handleDownloadPDF = async () => {
@@ -117,39 +100,21 @@ export default function Builder() {
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors)
-      toast({
-        title: "Please fix the following errors",
-        description: "Some required fields are missing or invalid",
-        variant: "destructive",
-      })
-
+      toast.error("Please fix the validation errors before downloading")
       return
     }
 
     if (!resumeRef.current) return
 
     setIsGeneratingPDF(true)
-
-    toast({
-      title: "Generating PDF",
-      description: "Your resume is being prepared for download",
-    })
+    const toastId = toast.loading("Generating PDF...")
 
     try {
       await generatePDF(resumeRef.current, resumeData.personal.name || "resume")
-
-      toast({
-        title: "Download complete",
-        description: "Your resume has been downloaded successfully",
-      })
+      toast.success("PDF downloaded successfully", { id: toastId })
     } catch (error) {
       console.error("PDF generation failed:", error)
-
-      toast({
-        title: "Download failed",
-        description: "There was an error generating your PDF. Please try again.",
-        variant: "destructive",
-      })
+      toast.error("Failed to generate PDF. Please try again.", { id: toastId })
     } finally {
       setIsGeneratingPDF(false)
     }
@@ -157,12 +122,12 @@ export default function Builder() {
 
   const handleEnhanceFullResume = async () => {
     if (!resumeData.personal.name || !resumeData.personal.email) {
-      toast.error("Please fill in at least your name and email before enhancing your resume")
+      toast.error("Please fill in at least your name and email before enhancing")
       return
     }
 
     setIsEnhancingResume(true)
-    toast.loading("✨ Enhancing your entire resume...")
+    const toastId = toast.loading("Enhancing your resume...")
 
     try {
       // Create a copy of the resume data to work with
@@ -213,11 +178,10 @@ export default function Builder() {
 
       // Update the resume data with enhanced content
       setResumeData(enhancedData)
-
-      toast.success("✨ Resume enhanced successfully!")
+      toast.success("Resume enhanced successfully!", { id: toastId })
     } catch (error) {
       console.error("Error enhancing resume:", error)
-      toast.error("Failed to enhance resume. Please try again.")
+      toast.error("Failed to enhance resume. Please try again.", { id: toastId })
     } finally {
       setIsEnhancingResume(false)
     }
@@ -347,7 +311,8 @@ export default function Builder() {
               <Palette className="h-4 w-4" />
               {getTemplateDisplayName(selectedTemplate)}
             </Button>
-            <TemplateCustomizer/>
+            <TemplateCustomizer />
+
             <Button
               variant="outline"
               size="sm"
@@ -388,6 +353,7 @@ export default function Builder() {
           </div>
         </div>
       </header>
+
       <Dialog open={showTemplateSelector} onOpenChange={setShowTemplateSelector}>
         <DialogContent className="sm:max-w-[800px]">
           <h2 className="text-xl font-semibold mb-4">Choose a Template</h2>
@@ -435,7 +401,11 @@ export default function Builder() {
                   <div className="hidden sm:block">
                     <TabsList className="grid grid-cols-3 sm:grid-cols-6 gap-1">
                       {sections.map((section) => (
-                        <TabsTrigger key={section.id} value={section.id} className="flex flex-col gap-1 py-2 h-auto">
+                        <TabsTrigger
+                          key={section.id}
+                          value={section.id}
+                          className="flex flex-col gap-1 py-2 h-auto"
+                        >
                           {section.icon}
                           <span className="text-xs">{section.label}</span>
                         </TabsTrigger>
@@ -586,7 +556,11 @@ export default function Builder() {
                 </ScrollArea>
               </div>
               <div className="flex justify-center mt-4">
-                <Button onClick={() => setIsFullScreenPreview(true)} className="gap-2" aria-label="Full screen preview">
+                <Button
+                  onClick={() => setIsFullScreenPreview(true)}
+                  className="gap-2"
+                  aria-label="Full screen preview"
+                >
                   <Maximize2 className="h-4 w-4" /> Full Screen Preview
                 </Button>
               </div>
