@@ -44,7 +44,6 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { TemplateSelector } from "../../components/template-selector"
-
 import { validateResumeData } from "../../lib/validation"
 import ModernTemplate from "../../components/templates/modern-template"
 import MinimalTemplate from "../../components/templates/minimal-template"
@@ -58,7 +57,6 @@ export default function Builder() {
   const searchParams = useSearchParams()
   const { resumeData, setResumeData } = useResumeContext()
   const [activeTab, setActiveTab] = useState("personal")
-  const [selectedTemplate, setSelectedTemplate] = useState(searchParams.get("template") || "modern")
   const [validationErrors, setValidationErrors] = useState({})
   const [scale, setScale] = useState(0.7)
   const resumeRef = useRef(null)
@@ -67,21 +65,13 @@ export default function Builder() {
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
   const [isEnhancingResume, setIsEnhancingResume] = useState(false)
 
-  useEffect(() => {
-    const templateId = searchParams.get("template") || "modern"
-    if (selectedTemplate !== templateId) {
-      setSelectedTemplate(templateId)
-      if (resumeData.selectedTemplate !== templateId) {
-        setResumeData((prev) => ({
-          ...prev,
-          selectedTemplate: templateId,
-        }))
-      }
-    }
-  }, [searchParams, resumeData.selectedTemplate])
+  // Get template from URL params or use default
+  const selectedTemplate = searchParams.get("template") || "modern"
 
   const handleTemplateSelect = (templateId) => {
-    setSelectedTemplate(templateId)
+    // Update URL with new template
+    router.push(`/builder?template=${templateId}`)
+    // Update resume data with new template
     setResumeData((prev) => ({
       ...prev,
       selectedTemplate: templateId,
@@ -188,7 +178,7 @@ export default function Builder() {
   }
 
   const renderTemplate = () => {
-    switch (resumeData.selectedTemplate) {
+    switch (selectedTemplate) { // Use selectedTemplate from URL params
       case "modern":
         return <ModernTemplate data={resumeData} />
       case "minimal":
@@ -354,43 +344,13 @@ export default function Builder() {
         </div>
       </header>
 
-      <Dialog open={showTemplateSelector} onOpenChange={setShowTemplateSelector}>
-        <DialogContent className="sm:max-w-[800px]">
-          <h2 className="text-xl font-semibold mb-4">Choose a Template</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {templates.map((template) => (
-              <div
-                key={template.id}
-                className={cn(
-                  "group relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all hover:shadow-md",
-                  selectedTemplate === template.id ? "border-primary" : "border-border hover:border-primary/50",
-                )}
-                onClick={() => handleTemplateSelect(template.id)}
-              >
-                <div className="relative h-48 w-full overflow-hidden">
-                  <Image
-                    src={template.thumbnail || "/placeholder.svg?height=192&width=300"}
-                    alt={template.name}
-                    fill
-                    className="object-cover transition-transform group-hover:scale-105"
-                  />
-                  {selectedTemplate === template.id && (
-                    <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                      <div className="bg-primary text-primary-foreground rounded-full p-2">
-                        <Check className="h-6 w-6" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="font-medium text-center">{template.name}</h3>
-                  <p className="text-center text-sm text-muted-foreground">{template.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TemplateSelector
+        open={showTemplateSelector}
+        onOpenChange={setShowTemplateSelector}
+        templates={templates}
+        selectedTemplate={selectedTemplate}
+        onSelectTemplate={handleTemplateSelect}
+      />
 
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
