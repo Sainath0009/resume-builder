@@ -1,10 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import Image from "next/image"
 import { Button } from "../../components/ui/button"
-import { Dialog, DialogContent } from "../../components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import PersonalInfoForm from "../../components/resume-form/personal-info-form"
 import EducationForm from "../../components/resume-form/education-form"
@@ -15,7 +13,6 @@ import CertificationsForm from "../../components/resume-form/certifications-form
 import { useResumeContext } from "../../context/resume-provider"
 import { templates } from "../../lib/templates"
 import { ThemeToggle } from "../../components/theme-toggle"
-import { cn } from "../../lib/utils"
 import { toast } from "sonner"
 import {
   Download,
@@ -25,7 +22,6 @@ import {
   ZoomOut,
   ChevronLeft,
   ChevronRight,
-  Check,
   Loader2,
   User,
   GraduationCap,
@@ -35,12 +31,7 @@ import {
   FolderKanban,
   Palette,
   X,
-  Sparkles,
-  FileUp,
   Wand2,
-  Share2,
-  Copy,
-  Mail,
 } from "lucide-react"
 import Link from "next/link"
 import { TemplateSelector } from "../../components/template-selector"
@@ -497,6 +488,13 @@ export default function Builder() {
                   >
                     <ZoomIn className="h-4 w-4" />
                   </Button>
+                  <Button
+                  onClick={() => setIsFullScreenPreview(true)}
+                  className="gap-2  "
+                  aria-label="Full screen preview"
+                >
+                  <Maximize2 className="h-4 w-4 gap-1" />  Full Screen
+                </Button>
                 </div>
               </div>
               <div className="bg-secondary/30 rounded-lg flex justify-center transition-colors duration-300">
@@ -515,19 +513,12 @@ export default function Builder() {
                   </div>
                 </ScrollArea>
               </div>
-              <div className="flex justify-center mt-4">
-                <Button
-                  onClick={() => setIsFullScreenPreview(true)}
-                  className="gap-2"
-                  aria-label="Full screen preview"
-                >
-                  <Maximize2 className="h-4 w-4" /> Full Screen Preview
-                </Button>
-              </div>
+              
             </div>
           </div>
         </div>
       </div>
     </div>
+    
   )
 }
