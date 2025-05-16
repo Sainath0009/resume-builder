@@ -1,27 +1,21 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "../../components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import PersonalInfoForm from "../../components/resume-form/personal-info-form"
-import EducationForm from "../../components/resume-form/education-form"
-import ExperienceForm from "../../components/resume-form//experience-form"
-import SkillsForm from "../../components/resume-form/skills-form"
-import ProjectsForm from "../../components/resume-form/projects-form"
-import CertificationsForm from "../../components/resume-form/certifications-form"
-import { useResumeContext } from "../../context/resume-provider"
-import { templates } from "../../lib/templates"
-import { ThemeToggle } from "../../components/theme-toggle"
-import { toast } from "sonner"
+import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Download,
   Save,
-  Maximize2,
-  ZoomIn,
-  ZoomOut,
-  ChevronLeft,
+  ArrowLeft,
+  Wand2,
+  Sparkles,
+  Palette,
+  Settings,
   ChevronRight,
+  ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   Loader2,
   User,
   GraduationCap,
@@ -29,147 +23,71 @@ import {
   Lightbulb,
   Award,
   FolderKanban,
-  Palette,
+  Maximize2,
+  ZoomIn,
+  ZoomOut,
   X,
-  Wand2,
+  Share2,
+  Copy,
+  Eye,
+  Undo,
+  Redo,
+  MoreHorizontal,
 } from "lucide-react"
-import Link from "next/link"
-import { TemplateSelector } from "../../components/template-selector"
-import { validateResumeData } from "../../lib/validation"
-import ModernTemplate from "../../components/templates/modern-template"
-import MinimalTemplate from "../../components/templates/minimal-template"
-import ProfessionalTemplate from "../../components/templates/professional-template"
+
+import { Button } from "../../components/ui/button"
+import { Card } from "../../components/ui/card"
+import { Badge } from "../../components/ui/badge"
+import { Progress } from "../../components/ui/progress"
 import { ScrollArea } from "../../components/ui/scroll-area"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu"
+import { toast } from "sonner"
+import { useResumeContext } from "../../context/resume-provider"
+import { templates } from "../../lib/templates"
+import { validateResumeData } from "../../lib/validation"
 import { generatePDF } from "../../lib/pdf-generator"
-import { TemplateCustomizer } from "../../components/template-customizer"
+import MinimalTemplate from "../../components/templates/minimal-template"
+import ModernTemplate from "../../components/templates/modern-template"
+import ProfessionalTemplate from "../../components/templates/professional-template"
+import TemplateCustomize, { TemplateCustomizer } from "../../components/template-customizer"
+import PersonalInfoForm from "../../components/resume-form/personal-info-form"
+import EducationForm from "../../components/resume-form/education-form"
+import ExperienceForm from "../../components/resume-form/experience-form"
+import SkillsForm from "../../components/resume-form/skills-form"
+import ProjectsForm from "../../components/resume-form/projects-form"
+import CertificationsForm from "../../components/resume-form/certifications-form"
+import { FullScreenPreview } from "../../components/full-screen-preview"
+import { TemplateSelector } from "../../components/template-selector"
+const sections = [
+  { id: "personal", label: "Personal", icon: <User className="h-5 w-5" /> },
+  { id: "education", label: "Education", icon: <GraduationCap className="h-5 w-5" /> },
+  { id: "experience", label: "Experience", icon: <Briefcase className="h-5 w-5" /> },
+  { id: "skills", label: "Skills", icon: <Lightbulb className="h-5 w-5" /> },
+  { id: "certifications", label: "Certificates", icon: <Award className="h-5 w-5" /> },
+  { id: "projects", label: "Projects", icon: <FolderKanban className="h-5 w-5" /> },
+]
 
 export default function Builder() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { resumeData, setResumeData } = useResumeContext()
-  const [activeTab, setActiveTab] = useState("personal")
+  
+  const [activeSection, setActiveSection] = useState("personal")
   const [validationErrors, setValidationErrors] = useState({})
-  const [scale, setScale] = useState(0.7)
-  const resumeRef = useRef(null)
+  const [scale, setScale] = useState(0.8)
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
+  const [showCustomizePanel, setShowCustomizePanel] = useState(false)
   const [isEnhancingResume, setIsEnhancingResume] = useState(false)
+  const [showAIPanel, setShowAIPanel] = useState(false)
+  const [undoHistory, setUndoHistory] = useState([])
+  const [redoHistory, setRedoHistory] = useState([])
+  const [completionPercentage, setCompletionPercentage] = useState(0)
 
-  // Get template from URL params or use default
-  const selectedTemplate = searchParams.get("template") || "modern"
-
-  const handleTemplateSelect = (templateId) => {
-    // Update URL with new template
-    router.push(`/builder?template=${templateId}`)
-    // Update resume data with new template
-    setResumeData((prev) => ({
-      ...prev,
-      selectedTemplate: templateId,
-    }))
-    setShowTemplateSelector(false)
-    toast.success("Template changed successfully")
-  }
-
-  const handleSaveDraft = () => {
-    localStorage.setItem("resumeData", JSON.stringify(resumeData))
-    toast.success("Draft saved successfully")
-  }
-
-  const handleDownloadPDF = async () => {
-    const errors = validateResumeData(resumeData)
-
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors)
-      toast.error("Please fix the validation errors before downloading")
-      return
-    }
-
-    if (!resumeRef.current) return
-
-    setIsGeneratingPDF(true)
-    const toastId = toast.loading("Generating PDF...")
-
-    try {
-      await generatePDF(resumeRef.current, resumeData.personal.name || "resume")
-      toast.success("PDF downloaded successfully", { id: toastId })
-    } catch (error) {
-      console.error("PDF generation failed:", error)
-      toast.error("Failed to generate PDF. Please try again.", { id: toastId })
-    } finally {
-      setIsGeneratingPDF(false)
-    }
-  }
-
-  const handleEnhanceFullResume = async () => {
-    if (!resumeData.personal.name || !resumeData.personal.email) {
-      toast.error("Please fill in at least your name and email before enhancing")
-      return
-    }
-
-    setIsEnhancingResume(true)
-    const toastId = toast.loading("Enhancing your resume...")
-
-    try {
-      // Create a copy of the resume data to work with
-      const enhancedData = { ...resumeData }
-
-      // Enhance personal summary if it exists
-      if (enhancedData.personal.summary) {
-        enhancedData.personal.summary = await enhanceText(enhancedData.personal.summary, "summary")
-      }
-
-      // Enhance career objective if it exists
-      if (enhancedData.personal.objective) {
-        enhancedData.personal.objective = await enhanceText(enhancedData.personal.objective, "objective")
-      }
-
-      // Enhance experience descriptions
-      if (enhancedData.experience && enhancedData.experience.length > 0) {
-        for (let i = 0; i < enhancedData.experience.length; i++) {
-          if (enhancedData.experience[i].description) {
-            enhancedData.experience[i].description = await enhanceText(
-              enhancedData.experience[i].description,
-              "experience",
-            )
-          }
-        }
-      }
-
-      // Enhance project descriptions
-      if (enhancedData.projects && enhancedData.projects.length > 0) {
-        for (let i = 0; i < enhancedData.projects.length; i++) {
-          if (enhancedData.projects[i].description) {
-            enhancedData.projects[i].description = await enhanceText(enhancedData.projects[i].description, "project")
-          }
-        }
-      }
-
-      // Enhance education descriptions
-      if (enhancedData.education && enhancedData.education.length > 0) {
-        for (let i = 0; i < enhancedData.education.length; i++) {
-          if (enhancedData.education[i].description) {
-            enhancedData.education[i].description = await enhanceText(
-              enhancedData.education[i].description,
-              "education",
-            )
-          }
-        }
-      }
-
-      // Update the resume data with enhanced content
-      setResumeData(enhancedData)
-      toast.success("Resume enhanced successfully!", { id: toastId })
-    } catch (error) {
-      console.error("Error enhancing resume:", error)
-      toast.error("Failed to enhance resume. Please try again.", { id: toastId })
-    } finally {
-      setIsEnhancingResume(false)
-    }
-  }
 
   const renderTemplate = () => {
-    switch (selectedTemplate) { // Use selectedTemplate from URL params
+    switch (selectedTemplate) {
       case "modern":
         return <ModernTemplate data={resumeData} />
       case "minimal":
@@ -180,142 +98,135 @@ export default function Builder() {
         return <ModernTemplate data={resumeData} />
     }
   }
+  
+  const resumeRef = useRef(null)
+  const selectedTemplate = searchParams.get("template") || "modern"
 
-  const getTemplateDisplayName = (templateId) => {
-    const template = templates.find((t) => t.id === templateId)
-    return template ? template.name : "Template"
+  useEffect(() => {
+    const filledSections = Object.keys(resumeData).filter((key) => {
+      if (Array.isArray(resumeData[key])) return resumeData[key].length > 0
+      return Object.keys(resumeData[key]).length > 0
+    }).length
+    
+    const totalSections = Object.keys(resumeData).length
+    setCompletionPercentage(Math.min(Math.floor((filledSections / totalSections) * 100), 100))
+  }, [resumeData])
+
+  const handleTemplateSelect = (templateId) => {
+    router.push(`/builder?template=${templateId}`)
+    setResumeData(prev => ({ ...prev, selectedTemplate: templateId }))
+    toast.success(`Template changed to ${templates.find(t => t.id === templateId)?.name || templateId}`)
+    setShowTemplateSelector(false)
   }
 
-  const sections = [
-    { id: "personal", label: "Personal Info", icon: <User className="h-4 w-4" /> },
-    { id: "education", label: "Education", icon: <GraduationCap className="h-4 w-4" /> },
-    { id: "experience", label: "Experience", icon: <Briefcase className="h-4 w-4" /> },
-    { id: "skills", label: "Skills", icon: <Lightbulb className="h-4 w-4" /> },
-    { id: "certifications", label: "Certifications", icon: <Award className="h-4 w-4" /> },
-    { id: "projects", label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
-  ]
+  const handleDownloadPDF = async () => {
+    const errors = validateResumeData(resumeData)
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
+      toast.error("Please fix the validation errors before downloading")
+      return
+    }
 
-  if (isFullScreenPreview) {
-    return (
-      <div className="fixed inset-0 bg-background z-50 flex flex-col animate-fade-in">
-        <div className="bg-card border-b p-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Resume Preview</h2>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-secondary rounded-md px-2 py-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
-                disabled={scale <= 0.5}
-                aria-label="Zoom out"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium w-12 text-center">{Math.round(scale * 100)}%</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setScale((prev) => Math.min(1.5, prev + 0.1))}
-                disabled={scale >= 1.5}
-                aria-label="Zoom in"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </div>
-            <Button
-              variant="outline"
-              onClick={handleDownloadPDF}
-              className="gap-2"
-              disabled={isGeneratingPDF}
-              aria-label="Download PDF"
-            >
-              {isGeneratingPDF ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4" />
-                  Download PDF
-                </>
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsFullScreenPreview(false)}
-              aria-label="Close preview"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
+    setIsGeneratingPDF(true)
+    const toastId = toast.loading("Generating PDF...")
 
-        <div className="flex-1 overflow-auto bg-secondary/30 p-8 flex justify-center">
-          <div
-            className="bg-white paper-effect mx-auto transition-transform"
-            style={{
-              width: "210mm",
-              transform: `scale(${scale})`,
-              transformOrigin: "top center",
-              minHeight: "297mm",
-            }}
-            ref={resumeRef}
-          >
-            {renderTemplate()}
-          </div>
-        </div>
-      </div>
-    )
+    try {
+      await generatePDF(resumeRef.current, resumeData.personal.name || "resume")
+      toast.success("PDF downloaded successfully", { id: toastId })
+    } catch (error) {
+      toast.error("Failed to generate PDF. Please try again.", { id: toastId })
+    } finally {
+      setIsGeneratingPDF(false)
+    }
   }
+
+  const handleEnhanceResume = async () => {
+    setIsEnhancingResume(true)
+    const toastId = toast.loading("Enhancing your resume with AI...")
+
+    try {
+      const enhancedData = { ...resumeData }
+
+      if (enhancedData.personal.summary) {
+        enhancedData.personal.summary = await enhanceText(enhancedData.personal.summary, "summary")
+      }
+
+      if (enhancedData.experience?.length > 0) {
+        for (const exp of enhancedData.experience) {
+          if (exp.description) {
+            exp.description = await enhanceText(exp.description, "experience")
+          }
+        }
+      }
+
+      setResumeData(enhancedData)
+      toast.success("Resume enhanced successfully!", { id: toastId })
+    } catch (error) {
+      toast.error("Failed to enhance resume. Please try again.", { id: toastId })
+    } finally {
+      setIsEnhancingResume(false)
+    }
+  }
+
+  const renderSectionContent = () => {
+    const FormComponent = {
+      personal: PersonalInfoForm,
+      education: EducationForm,
+      experience: ExperienceForm,
+      skills: SkillsForm,
+      certifications: CertificationsForm,
+      projects: ProjectsForm,
+    }[activeSection] || PersonalInfoForm
+
+    return <FormComponent validationErrors={validationErrors[activeSection] || []} />
+  }
+
+ 
+
+  
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
-      <header className="bg-card border-b sticky top-0 z-10 transition-colors duration-300">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center">
-            <Link href="/" className="text-lg font-semibold">
-              Resume Builder
-            </Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowTemplateSelector(true)}
-              className="gap-2 hidden sm:flex"
-              aria-label="Change template"
-            >
-              <Palette className="h-4 w-4" />
-              {getTemplateDisplayName(selectedTemplate)}
-            </Button>
-            <TemplateCustomizer />
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white">
+      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b">
+        <div className="container mx-auto h-16 px-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="font-medium">Back to Home</span>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-1.5 bg-zinc-100 px-3 py-1.5 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-xs font-medium">Auto-saving</span>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="border-zinc-300">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => toast.success("Resume saved successfully")} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  <span>Save Draft</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2">
+                  <Share2 className="h-4 w-4" />
+                  <span>Share Resume</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2">
+                  <Copy className="h-4 w-4" />
+                  <span>Duplicate</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <Button
-              variant="outline"
-              size="sm"
-              onClick={handleEnhanceFullResume}
-              className="gap-2 hidden sm:flex"
-              disabled={isEnhancingResume}
-              aria-label="Enhance resume"
-            >
-              {isEnhancingResume ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-              Magic Writer
-            </Button>
-
-            <Button variant="outline" size="icon" onClick={handleSaveDraft} aria-label="Save draft">
-              <Save className="h-4 w-4" />
-            </Button>
-
-            <Button
-              size="sm"
+              variant="default"
               onClick={handleDownloadPDF}
-              className="gap-2"
+              className="gap-2 bg-teal-600 hover:bg-teal-700 text-white"
               disabled={isGeneratingPDF}
-              aria-label="Download PDF"
             >
               {isGeneratingPDF ? (
                 <>
@@ -325,184 +236,171 @@ export default function Builder() {
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Download</span>
+                  <span className="hidden sm:inline">Download PDF</span>
                 </>
               )}
             </Button>
-
-            <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <TemplateSelector
-        open={showTemplateSelector}
-        onOpenChange={setShowTemplateSelector}
-        templates={templates}
-        selectedTemplate={selectedTemplate}
-        onSelectTemplate={handleTemplateSelect}
-      />
-
       <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="lg:w-1/2 animate-fade-in">
-            <div className="bg-card rounded-lg border p-6 transition-colors duration-300">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="hidden sm:block">
-                    <TabsList className="grid grid-cols-3 sm:grid-cols-6 gap-1">
-                      {sections.map((section) => (
-                        <TabsTrigger
-                          key={section.id}
-                          value={section.id}
-                          className="flex flex-col gap-1 py-2 h-auto"
-                        >
-                          {section.icon}
-                          <span className="text-xs">{section.label}</span>
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </div>
-                  <div className="sm:hidden">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          const currentIndex = sections.findIndex((section) => section.id === activeTab)
-                          if (currentIndex > 0) {
-                            setActiveTab(sections[currentIndex - 1].id)
-                          }
-                        }}
-                        disabled={activeTab === sections[0].id}
-                        aria-label="Previous section"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm font-medium">
-                        {sections.findIndex((section) => section.id === activeTab) + 1} / {sections.length}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          const currentIndex = sections.findIndex((section) => section.id === activeTab)
-                          if (currentIndex < sections.length - 1) {
-                            setActiveTab(sections[currentIndex + 1].id)
-                          }
-                        }}
-                        disabled={activeTab === sections[sections.length - 1].id}
-                        aria-label="Next section"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <TabsContent value="personal" className="animate-slide-in">
-                    <PersonalInfoForm validationErrors={validationErrors.personal || []} />
-                  </TabsContent>
-                  <TabsContent value="education" className="animate-slide-in">
-                    <EducationForm validationErrors={validationErrors.education || []} />
-                  </TabsContent>
-                  <TabsContent value="experience" className="animate-slide-in">
-                    <ExperienceForm validationErrors={validationErrors.experience || []} />
-                  </TabsContent>
-                  <TabsContent value="skills" className="animate-slide-in">
-                    <SkillsForm validationErrors={validationErrors.skills || []} />
-                  </TabsContent>
-                  <TabsContent value="certifications" className="animate-slide-in">
-                    <CertificationsForm validationErrors={validationErrors.certifications || []} />
-                  </TabsContent>
-                  <TabsContent value="projects" className="animate-slide-in">
-                    <ProjectsForm validationErrors={validationErrors.projects || []} />
-                  </TabsContent>
-                </div>
-
-                <div className="flex justify-between mt-8 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const currentIndex = sections.findIndex((section) => section.id === activeTab)
-                      if (currentIndex > 0) {
-                        setActiveTab(sections[currentIndex - 1].id)
-                      }
-                    }}
-                    disabled={activeTab === sections[0].id}
-                    className="gap-2"
-                    aria-label="Previous section"
-                  >
-                    <ChevronLeft className="h-4 w-4" /> Previous
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      const currentIndex = sections.findIndex((section) => section.id === activeTab)
-                      if (currentIndex < sections.length - 1) {
-                        setActiveTab(sections[currentIndex + 1].id)
-                      }
-                    }}
-                    disabled={activeTab === sections[sections.length - 1].id}
-                    className="gap-2"
-                    aria-label="Next section"
-                  >
-                    Next <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Tabs>
-            </div>
-
-            <div className="lg:hidden mt-6">
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={() => setIsFullScreenPreview(true)}
-                aria-label="View preview"
-              >
-                <Maximize2 className="h-4 w-4" /> View Resume Preview
-              </Button>
-            </div>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold">Build Your Resume</h1>
+            <Badge variant="outline" className="gap-1.5 border-zinc-300">
+              <span>{completionPercentage}%</span> Complete
+            </Badge>
           </div>
-          <div className="hidden lg:block lg:w-1/2 animate-fade-in">
-            <div className="bg-card rounded-lg border p-6 sticky top-20 transition-colors duration-300">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Live Preview</h2>
-                <div className="flex items-center gap-2">
+          <Progress value={completionPercentage} className="h-2 bg-zinc-200">
+            <div
+              className="h-full bg-gradient-to-r from-teal-600 to-green-600"
+              style={{ width: `${completionPercentage}%` }}
+            />
+          </Progress>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-64 shrink-0">
+            <Card className="overflow-hidden border border-zinc-200">
+              <div className="p-4 border-b bg-zinc-50">
+                <h2 className="font-medium">Resume Sections</h2>
+              </div>
+              <div className="p-2">
+                {sections.map((section) => (
+                  <button
+                    key={section.id}
+                    className={`w-full flex items-center gap-3 p-3 rounded-md text-left transition-colors ${
+                      activeSection === section.id
+                        ? "bg-gradient-to-r from-teal-600 to-green-600 text-white"
+                        : "hover:bg-zinc-100 text-zinc-800"
+                    }`}
+                    onClick={() => setActiveSection(section.id)}
+                  >
+                    {section.icon}
+                    <span>{section.label}</span>
+                    {activeSection === section.id && <ChevronRight className="h-4 w-4 ml-auto" />}
+                  </button>
+                ))}
+              </div>
+              <div className="p-4 border-t">
+                <div className="space-y-3">
                   <Button
                     variant="outline"
-                    size="sm"
-                    onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
-                    disabled={scale <= 0.5}
-                    aria-label="Zoom out"
+                    className="w-full justify-start gap-2 border-zinc-300 hover:bg-zinc-100 text-zinc-800"
+                    onClick={() => setShowTemplateSelector(true)}
                   >
-                    <ZoomOut className="h-4 w-4" />
+                    <Palette className="h-4 w-4" />
+                    <span>Change Template</span>
                   </Button>
-                  <span className="text-sm">{Math.round(scale * 100)}%</span>
+                  <TemplateCustomizer/>
                   <Button
                     variant="outline"
-                    size="sm"
-                    onClick={() => setScale((prev) => Math.min(1, prev + 0.1))}
-                    disabled={scale >= 1}
-                    aria-label="Zoom in"
+                    className="w-full justify-start gap-2 border-zinc-300 hover:bg-zinc-100 text-zinc-800"
+                    onClick={() => setShowAIPanel(true)}
                   >
-                    <ZoomIn className="h-4 w-4" />
+                    <Wand2 className="h-4 w-4" />
+                    <span>AI Assistant</span>
                   </Button>
-                  <Button
-                  onClick={() => setIsFullScreenPreview(true)}
-                  className="gap-2  "
-                  aria-label="Full screen preview"
-                >
-                  <Maximize2 className="h-4 w-4 gap-1" />  Full Screen
-                </Button>
                 </div>
               </div>
-              <div className="bg-secondary/30 rounded-lg flex justify-center transition-colors duration-300">
-                <ScrollArea className="h-[calc(100vh-220px)] w-full">
+            </Card>
+          </div>
+
+          <div className="flex-1 relative">
+            <AnimatePresence>
+              {showCustomizePanel && <CustomizePanel />}
+            </AnimatePresence>
+
+            <Card className="overflow-hidden border border-zinc-200">
+              <div className="p-4 border-b flex justify-between items-center">
+                <div>
+                  <h2 className="font-medium flex items-center gap-2">
+                    {sections.find((s) => s.id === activeSection)?.icon}
+                    <span>{sections.find((s) => s.id === activeSection)?.label} Information</span>
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" disabled={undoHistory.length === 0}>
+                    <Undo className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" disabled={redoHistory.length === 0}>
+                    <Redo className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden"
+                    onClick={() => setIsFullScreenPreview(true)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-6">{renderSectionContent()}</div>
+              <div className="p-4 border-t flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const currentIndex = sections.findIndex((s) => s.id === activeSection)
+                    if (currentIndex > 0) setActiveSection(sections[currentIndex - 1].id)
+                  }}
+                  disabled={activeSection === sections[0].id}
+                  className="gap-2 border-zinc-300"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Previous
+                </Button>
+                <Button
+                  onClick={() => {
+                    const currentIndex = sections.findIndex((s) => s.id === activeSection)
+                    if (currentIndex < sections.length - 1) setActiveSection(sections[currentIndex + 1].id)
+                  }}
+                  disabled={activeSection === sections[sections.length - 1].id}
+                  className="gap-2 bg-teal-600 hover:bg-teal-700 text-white"
+                >
+                  Next <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </Card>
+          </div>
+
+          <div className="lg:w-[450px] shrink-0 hidden lg:block">
+            <Card className="overflow-hidden sticky top-24 border border-zinc-200">
+              <div className="p-4 border-b flex justify-between items-center">
+                <h2 className="font-medium">Preview</h2>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-zinc-100 rounded-md px-2 py-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
+                      disabled={scale <= 0.5}
+                    >
+                      <ZoomOut className="h-3 w-3" />
+                    </Button>
+                    <span className="text-xs font-medium w-8 text-center">{Math.round(scale * 100)}%</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setScale((prev) => Math.min(1.5, prev + 0.1))}
+                      disabled={scale >= 1.5}
+                    >
+                      <ZoomIn className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setIsFullScreenPreview(true)}>
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="bg-zinc-50 p-4">
+                <ScrollArea className="h-[calc(100vh-280px)]">
                   <div
-                    className="bg-white paper-effect mx-auto transition-transform origin-top"
+                    className="bg-white shadow-md mx-auto transition-transform"
                     style={{
-                      width: "210mm",
+                      width: "100%",
                       transform: `scale(${scale})`,
                       transformOrigin: "top center",
                       minHeight: "297mm",
@@ -513,12 +411,29 @@ export default function Builder() {
                   </div>
                 </ScrollArea>
               </div>
-              
-            </div>
+            </Card>
           </div>
         </div>
       </div>
+
+      <TemplateSelector
+        open={showTemplateSelector}
+        onOpenChange={setShowTemplateSelector}
+        templates={templates}
+        selectedTemplate={selectedTemplate}
+        onSelectTemplate={handleTemplateSelect}
+      />
+
+      {isFullScreenPreview && (
+        <FullScreenPreview
+          resumeData={resumeData}
+          scale={scale}
+          setScale={setScale}
+          setIsFullScreenPreview={setIsFullScreenPreview}
+          handleDownloadPDF={handleDownloadPDF}
+          isGeneratingPDF={isGeneratingPDF}
+        />
+      )}
     </div>
-    
   )
 }
