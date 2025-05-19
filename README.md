@@ -1,6 +1,6 @@
 # 🚀 ResuAI – Craft Smart Resumes, Instantly.
 
-Welcome to **ResuAI**, an AI-powered resume builder that makes crafting a professional and personalized resume as easy as a few clicks. Say goodbye to boring templates and hello to smart, elegant, and customizable resumes powered by intelligent tech.
+Welcome to ResuAI, an AI-powered resume builder that makes crafting a professional and personalized resume as easy as a few clicks. Say goodbye to boring templates and hello to smart, elegant, and customizable resumes powered by intelligent tech.
 
 ![ResuAI Banner](https://i.ibb.co/21DtzV05/Screenshot-2025-05-16-162445.png) <!-- Replace with actual image/banner URL -->
 
