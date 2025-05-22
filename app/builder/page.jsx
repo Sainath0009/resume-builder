@@ -49,7 +49,7 @@ import { generatePDF } from "../../lib/pdf-generator"
 import MinimalTemplate from "../../components/templates/minimal-template"
 import ModernTemplate from "../../components/templates/modern-template"
 import ProfessionalTemplate from "../../components/templates/professional-template"
-import TemplateCustomize, { TemplateCustomizer } from "../../components/template-customizer"
+import {TemplateCustomizer} from "../../components/template-customizer";
 import PersonalInfoForm from "../../components/resume-form/personal-info-form"
 import EducationForm from "../../components/resume-form/education-form"
 import ExperienceForm from "../../components/resume-form/experience-form"
@@ -293,7 +293,7 @@ export default function Builder() {
                     <Palette className="h-4 w-4" />
                     <span>Change Template</span>
                   </Button>
-                  <TemplateCustomizer/>
+                 <TemplateCustomizer/>
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-2 border-zinc-300 hover:bg-zinc-100 text-zinc-800"

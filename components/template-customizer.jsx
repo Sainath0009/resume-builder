@@ -5,8 +5,10 @@ import { useResumeContext } from "../context/resume-provider"
 import { Button } from "./ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
-import { Palette, Type } from "lucide-react"
+import { Slider } from "./ui/slider"
+import { Palette, Type, Contrast, LayoutPanelLeft } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "../lib/utils"
 
 const colorSchemes = [
   { id: "blue", name: "Blue", primary: "bg-blue-600", secondary: "bg-blue-100", text: "text-blue-600" },
@@ -19,55 +21,67 @@ const colorSchemes = [
   { id: "indigo", name: "Indigo", primary: "bg-indigo-600", secondary: "bg-indigo-100", text: "text-indigo-600" },
 ]
 
-
 const fontOptions = [
-  { id: "sans", name: "Sans", class: "font-sans" },
-  { id: "serif", name: "Serif", class: "font-serif" },
-  { id: "mono", name: "Mono", class: "font-mono" },
+  { id: "sans", name: "Inter", class: "font-sans" },
+  { id: "serif", name: "Lora", class: "font-serif" },
+  { id: "mono", name: "Roboto Mono", class: "font-mono" },
 ]
 
 export function TemplateCustomizer() {
   const { resumeData, setResumeData } = useResumeContext()
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedColor, setSelectedColor] = useState(resumeData.themeColor || "blue")
+  const [selectedColor, setSelectedColor] = useState(resumeData.themeColor || "teal")
   const [selectedFont, setSelectedFont] = useState(resumeData.themeFont || "sans")
+  const [spacing, setSpacing] = useState(resumeData.themeSpacing || 2)
+  const [contrast, setContrast] = useState(resumeData.themeContrast || 1)
   const [activeTab, setActiveTab] = useState("colors")
 
   useEffect(() => {
-    if (resumeData.themeColor) {
-      setSelectedColor(resumeData.themeColor)
-    }
-    if (resumeData.themeFont) {
-      setSelectedFont(resumeData.themeFont)
-    }
-  }, [resumeData.themeColor, resumeData.themeFont])
+    if (resumeData.themeColor) setSelectedColor(resumeData.themeColor)
+    if (resumeData.themeFont) setSelectedFont(resumeData.themeFont)
+    if (resumeData.themeSpacing) setSpacing(resumeData.themeSpacing)
+    if (resumeData.themeContrast) setContrast(resumeData.themeContrast)
+  }, [resumeData])
 
   const handleSaveTheme = () => {
-    setResumeData((prev) => ({
+    setResumeData(prev => ({
       ...prev,
       themeColor: selectedColor,
       themeFont: selectedFont,
+      themeSpacing: spacing,
+      themeContrast: contrast,
     }))
-
     toast.success("Template customization saved")
     setIsOpen(false)
   }
 
+  const resetToDefaults = () => {
+    setSelectedColor("teal")
+    setSelectedFont("sans")
+    setSpacing(2)
+    setContrast(1)
+  }
+
   return (
     <>
-      <Button onClick={() => setIsOpen(true)} variant="outline" size="sm" className="gap-2">
+      <Button 
+        onClick={() => setIsOpen(true)} 
+        variant="outline" 
+        size="sm" 
+        className="w-full justify-start gap-2"
+      >
         <Palette className="h-4 w-4" />
-        Customize Template
+        Customize Design
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Customize Template</DialogTitle>
+            <DialogTitle>Customize Template Design</DialogTitle>
           </DialogHeader>
 
-          <Tabs defaultValue="colors" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 mb-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid grid-cols-4 mb-4">
               <TabsTrigger value="colors" className="flex items-center gap-2">
                 <Palette className="h-4 w-4" />
                 Colors
@@ -76,29 +90,37 @@ export function TemplateCustomizer() {
                 <Type className="h-4 w-4" />
                 Fonts
               </TabsTrigger>
+              <TabsTrigger value="layout" className="flex items-center gap-2">
+                <LayoutPanelLeft className="h-4 w-4" />
+                Layout
+              </TabsTrigger>
+              <TabsTrigger value="contrast" className="flex items-center gap-2">
+                <Contrast className="h-4 w-4" />
+                Contrast
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="colors" className="space-y-4">
               <div className="grid grid-cols-4 gap-3">
                 {colorSchemes.map((color) => (
-                  <div
+                  <button
                     key={color.id}
-                    className={`cursor-pointer rounded-md p-1 transition-all ${
-                      selectedColor === color.id ? "ring-2 ring-primary ring-offset-2" : ""
-                    }`}
+                    className={cn(
+                      "group flex flex-col items-center gap-1 rounded-md p-2 transition-all",
+                      selectedColor === color.id && "ring-2 ring-primary ring-offset-2"
+                    )}
                     onClick={() => setSelectedColor(color.id)}
                   >
-                    <div className={`${color.primary} h-12 rounded-md`}>
-                      <div className={`${color.secondary} h-6 rounded-t-md`}></div>
+                    <div className={`${color.primary} h-10 w-full rounded-md relative overflow-hidden`}>
+                      <div className={`${color.secondary} h-4 w-full absolute bottom-0`}></div>
                     </div>
-                    <p className="text-xs text-center mt-1">{color.name}</p>
-                  </div>
+                    <span className="text-sm">{color.name}</span>
+                  </button>
                 ))}
               </div>
               <div className="p-4 bg-muted/30 rounded-md">
                 <p className="text-sm text-muted-foreground">
-                  The selected color scheme will be applied to your resume template, including headings, borders, and
-                  accent elements.
+                  The selected color scheme will be applied to headings, borders, and accent elements.
                 </p>
               </div>
             </TabsContent>
@@ -106,36 +128,83 @@ export function TemplateCustomizer() {
             <TabsContent value="fonts" className="space-y-4">
               <div className="grid grid-cols-1 gap-3">
                 {fontOptions.map((font) => (
-                  <div
+                  <button
                     key={font.id}
-                    className={`cursor-pointer rounded-md p-4 transition-all ${font.class} ${
+                    className={cn(
+                      "text-left p-4 rounded-md border transition-all",
+                      font.class,
                       selectedFont === font.id
                         ? "ring-2 ring-primary ring-offset-2 bg-primary/5"
-                        : "border hover:bg-muted/30"
-                    }`}
+                        : "hover:bg-muted/30"
+                    )}
                     onClick={() => setSelectedFont(font.id)}
                   >
                     <h3 className="text-lg font-semibold">The quick brown fox</h3>
                     <p className="text-sm text-muted-foreground">
-                      This is how your text will appear in the {font.name} font family.
+                      {font.name} - Professional and clean
                     </p>
-                  </div>
+                  </button>
                 ))}
               </div>
-              <div className="p-4 bg-muted/30 rounded-md">
-                <p className="text-sm text-muted-foreground">
-                  The selected font will be applied to all text in your resume. Choose a font that best represents your
-                  professional style.
-                </p>
+            </TabsContent>
+
+            <TabsContent value="layout" className="space-y-4">
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-medium">Section Spacing</span>
+                  <span className="text-sm text-muted-foreground">
+                    {spacing === 1 ? 'Compact' : spacing === 2 ? 'Standard' : 'Spacious'}
+                  </span>
+                </div>
+                <Slider
+                  value={[spacing]}
+                  min={1}
+                  max={3}
+                  step={1}
+                  onValueChange={([value]) => setSpacing(value)}
+                />
+                <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                  <span>Compact</span>
+                  <span>Standard</span>
+                  <span>Spacious</span>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="contrast" className="space-y-4">
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-medium">Contrast Level</span>
+                  <span className="text-sm text-muted-foreground">
+                    {contrast === 1 ? 'Subtle' : contrast === 2 ? 'Balanced' : 'High'}
+                  </span>
+                </div>
+                <Slider
+                  value={[contrast]}
+                  min={1}
+                  max={3}
+                  step={1}
+                  onValueChange={([value]) => setContrast(value)}
+                />
+                <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                  <span>Subtle</span>
+                  <span>Balanced</span>
+                  <span>High</span>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
-              Cancel
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={resetToDefaults}>
+              Reset Defaults
             </Button>
-            <Button onClick={handleSaveTheme}>Save Changes</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveTheme}>Apply Changes</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
