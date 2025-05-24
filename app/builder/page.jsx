@@ -9,13 +9,9 @@ import {
   Save,
   ArrowLeft,
   Wand2,
-  Sparkles,
   Palette,
-  Settings,
   ChevronRight,
   ChevronLeft,
-  ChevronUp,
-  ChevronDown,
   Loader2,
   User,
   GraduationCap,
@@ -26,7 +22,6 @@ import {
   Maximize2,
   ZoomIn,
   ZoomOut,
-  X,
   Share2,
   Copy,
   Eye,
@@ -34,7 +29,7 @@ import {
   Redo,
   MoreHorizontal,
 } from "lucide-react"
-
+import { useAuth } from "@clerk/nextjs"
 import { Button } from "../../components/ui/button"
 import { Card } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
@@ -66,8 +61,8 @@ const sections = [
   { id: "certifications", label: "Certificates", icon: <Award className="h-5 w-5" /> },
   { id: "projects", label: "Projects", icon: <FolderKanban className="h-5 w-5" /> },
 ]
-
 export default function Builder() {
+  const { userId, isLoaded, isSignedIn } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { resumeData, setResumeData } = useResumeContext()
@@ -84,7 +79,8 @@ export default function Builder() {
   const [undoHistory, setUndoHistory] = useState([])
   const [redoHistory, setRedoHistory] = useState([])
   const [completionPercentage, setCompletionPercentage] = useState(0)
-
+  const [isLoadingResume, setIsLoadingResume] = useState(true)
+  const [resumeId, setResumeId] = useState(null)
 
   const renderTemplate = () => {
     switch (selectedTemplate) {
@@ -103,6 +99,34 @@ export default function Builder() {
   const selectedTemplate = searchParams.get("template") || "modern"
 
   useEffect(() => {
+    if (!isLoaded) return
+
+    if (!isSignedIn) {
+      router.push("/sign-in")
+      return
+    }
+
+    const loadUserResume = async () => {
+      try {
+        const resumeId = searchParams.get("id")
+        if (resumeId) {
+          const resume = await loadResume(userId, resumeId)
+          if (resume) {
+            setResumeData(resume.data)
+            setResumeId(resume.id)
+          }
+        }
+      } catch (error) {
+        toast.error("Failed to load resume")
+      } finally {
+        setIsLoadingResume(false)
+      }
+    }
+
+    loadUserResume()
+  }, [isLoaded, isSignedIn, userId, searchParams, setResumeData, router])
+
+  useEffect(() => {
     const filledSections = Object.keys(resumeData).filter((key) => {
       if (Array.isArray(resumeData[key])) return resumeData[key].length > 0
       return Object.keys(resumeData[key]).length > 0
@@ -112,8 +136,24 @@ export default function Builder() {
     setCompletionPercentage(Math.min(Math.floor((filledSections / totalSections) * 100), 100))
   }, [resumeData])
 
+  const handleSaveResume = async () => {
+    if (!userId) {
+      toast.error("You must be signed in to save your resume")
+      return
+    }
+
+    try {
+      const toastId = toast.loading("Saving resume...")
+      const savedResume = await saveResume(userId, resumeData, resumeId)
+      setResumeId(savedResume.id)
+      toast.success("Resume saved successfully", { id: toastId })
+    } catch (error) {
+      toast.error("Failed to save resume")
+    }
+  }
+
   const handleTemplateSelect = (templateId) => {
-    router.push(`/builder?template=${templateId}`)
+    router.push(`/builder?template=${templateId}${resumeId ? `&id=${resumeId}` : ''}`)
     setResumeData(prev => ({ ...prev, selectedTemplate: templateId }))
     toast.success(`Template changed to ${templates.find(t => t.id === templateId)?.name || templateId}`)
     setShowTemplateSelector(false)
@@ -141,6 +181,11 @@ export default function Builder() {
   }
 
   const handleEnhanceResume = async () => {
+    if (!userId) {
+      toast.error("You must be signed in to use AI features")
+      return
+    }
+
     setIsEnhancingResume(true)
     const toastId = toast.loading("Enhancing your resume with AI...")
 
@@ -148,13 +193,21 @@ export default function Builder() {
       const enhancedData = { ...resumeData }
 
       if (enhancedData.personal.summary) {
-        enhancedData.personal.summary = await enhanceText(enhancedData.personal.summary, "summary")
+        enhancedData.personal.summary = await enhanceTextWithAI(
+          userId,
+          enhancedData.personal.summary,
+          "summary"
+        )
       }
 
       if (enhancedData.experience?.length > 0) {
         for (const exp of enhancedData.experience) {
           if (exp.description) {
-            exp.description = await enhanceText(exp.description, "experience")
+            exp.description = await enhanceTextWithAI(
+              userId,
+              exp.description,
+              "experience"
+            )
           }
         }
       }
@@ -169,6 +222,14 @@ export default function Builder() {
   }
 
   const renderSectionContent = () => {
+    if (isLoadingResume) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+        </div>
+      )
+    }
+
     const FormComponent = {
       personal: PersonalInfoForm,
       education: EducationForm,
@@ -181,17 +242,21 @@ export default function Builder() {
     return <FormComponent validationErrors={validationErrors[activeSection] || []} />
   }
 
- 
-
-  
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white">
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b">
         <div className="container mx-auto h-16 px-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 transition-colors">
+          <Link href="/dashboard" className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 transition-colors">
             <ArrowLeft className="h-4 w-4" />
-            <span className="font-medium">Back to Home</span>
+            <span className="font-medium">Back to Dashboard</span>
           </Link>
 
           <div className="flex items-center gap-3">
@@ -207,9 +272,12 @@ export default function Builder() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => toast.success("Resume saved successfully")} className="gap-2">
+                <DropdownMenuItem 
+                  onClick={handleSaveResume} 
+                  className="gap-2"
+                >
                   <Save className="h-4 w-4" />
-                  <span>Save Draft</span>
+                  <span>Save Resume</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2">
                   <Share2 className="h-4 w-4" />
@@ -293,13 +361,18 @@ export default function Builder() {
                     <Palette className="h-4 w-4" />
                     <span>Change Template</span>
                   </Button>
-                 <TemplateCustomizer/>
+                  <TemplateCustomizer />
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-2 border-zinc-300 hover:bg-zinc-100 text-zinc-800"
                     onClick={() => setShowAIPanel(true)}
+                    disabled={isEnhancingResume}
                   >
-                    <Wand2 className="h-4 w-4" />
+                    {isEnhancingResume ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-4 w-4" />
+                    )}
                     <span>AI Assistant</span>
                   </Button>
                 </div>
