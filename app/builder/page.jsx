@@ -224,9 +224,9 @@ export default function Builder() {
   const renderSectionContent = () => {
     if (isLoadingResume) {
       return (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
-        </div>
+         <div className="container mx-auto px-4 py-16 flex justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600" />
+      </div>
       )
     }
 

@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useUser } from "@clerk/nextjs"
 import { Plus, FileText, Clock, Star, Download, Edit, Trash2 } from "lucide-react"
-import { Button } from "../../components/ui/button"
+import { Button} from "../../components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../components/ui/card"
 import { toast } from "sonner"
-
 export default function DashboardPage() {
   const { user, isLoaded, isSignedIn } = useUser()
   const router = useRouter()
@@ -35,7 +34,10 @@ export default function DashboardPage() {
             lastUpdated: new Date().toISOString(),
             template: "modern",
             data: {
-              personal: { name: user.firstName + " " + user.lastName, email: user.emailAddresses[0]?.emailAddress },
+              personal: {
+                name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Your Name",
+                email: user.emailAddresses?.[0]?.emailAddress || "",
+              },
             },
           },
         ]
@@ -46,6 +48,7 @@ export default function DashboardPage() {
   }, [isSignedIn, user])
 
   const deleteResume = (resumeId) => {
+    if (!user) return
     const updatedResumes = resumes.filter((resume) => resume.id !== resumeId)
     setResumes(updatedResumes)
     localStorage.setItem(`resumes_${user.id}`, JSON.stringify(updatedResumes))
@@ -65,7 +68,17 @@ export default function DashboardPage() {
     )
   }
 
-  if (!isSignedIn) return null
+  if (!isSignedIn) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+        <p className="text-zinc-600 mb-8">Please sign in to access your dashboard.</p>
+        <Link href="/">
+          <Button className="bg-teal-600 hover:bg-teal-700 text-white">Go Home</Button>
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
