@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import { ResumeProvider } from "../context/resume-provider"
 import { ClerkProvider } from "@clerk/nextjs"
 import { MainNav } from "../components/main-nav"
+import {Footer} from "../components/footer"
 const inter = Inter({ subsets: ["latin"] })
 
 
@@ -23,7 +24,7 @@ export default function RootLayout({ children }) {
               {children}
             
             </ResumeProvider>
-         
+          <Footer />
        
       </body>
     </html>
