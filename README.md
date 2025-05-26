@@ -2,7 +2,7 @@
 
 Welcome to ResumAI, the intelligent resume builder that empowers you to craft personalized, professional resumes in just a few clicks. Say goodbye to rigid templates and hello to stunning, customizable resumes enhanced by modern AI tools and sleek design.
 
-![ResuAI Banner](https://i.ibb.co/21DtzV05/Screenshot-2025-05-16-162445.png) 
+![ResuAI Banner](https://i.ibb.co/TqrM1gnP/Screenshot-2025-05-26-134006.png) 
 
 ---
 
