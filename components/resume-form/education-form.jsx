@@ -138,10 +138,6 @@ export default function EducationForm({ validationErrors = [] }) {
 
   return (
     <Card className="border-0 shadow-none">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle>Education</CardTitle>
-        <CardDescription>Add your educational background, including degrees and certifications</CardDescription>
-      </CardHeader>
       <CardContent className="px-0">
         {validationErrors.length > 0 && (
           <Alert variant="destructive" className="mb-6">

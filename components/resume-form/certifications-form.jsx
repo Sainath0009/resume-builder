@@ -72,10 +72,6 @@ export default function CertificationsForm({ validationErrors = [] }) {
 
   return (
     <Card className="border-0 shadow-none">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle>Certifications</CardTitle>
-        <CardDescription>Add your professional certifications and credentials</CardDescription>
-      </CardHeader>
       <CardContent className="px-0">
         {validationErrors.length > 0 && (
           <Alert variant="destructive" className="mb-6">

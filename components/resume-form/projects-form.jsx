@@ -81,10 +81,7 @@ export default function ProjectsForm({ validationErrors = [] }) {
 
   return (
     <Card className="border-0 shadow-none">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle>Projects</CardTitle>
-        <CardDescription>Add your personal or professional projects to showcase your skills</CardDescription>
-      </CardHeader>
+    
       <CardContent className="px-0">
         {validationErrors.length > 0 && (
           <Alert variant="destructive" className="mb-6">

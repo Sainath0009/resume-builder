@@ -83,10 +83,7 @@ export default function SkillsForm({ validationErrors = [] }) {
 
   return (
     <Card className="border-0 shadow-none">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle>Skills</CardTitle>
-        <CardDescription>Add your technical skills, soft skills, and languages</CardDescription>
-      </CardHeader>
+      
       <CardContent className="px-0">
         {validationErrors.length > 0 && (
           <Alert variant="destructive" className="mb-6">
@@ -113,7 +110,7 @@ export default function SkillsForm({ validationErrors = [] }) {
                 placeholder="JavaScript, React, Node.js, etc."
                 className="mr-2"
               />
-              <Button type="button" onClick={addTechnicalSkill}>
+              <Button type="button" onClick={addTechnicalSkill}  className="bg-teal-600 hover:bg-teal-700 text-white">
                 Add
               </Button>
             </div>
@@ -138,7 +135,7 @@ export default function SkillsForm({ validationErrors = [] }) {
                 placeholder="Communication, Leadership, Teamwork, etc."
                 className="mr-2"
               />
-              <Button type="button" onClick={addSoftSkill}>
+              <Button type="button" onClick={addSoftSkill}  className="bg-teal-600 hover:bg-teal-700 text-white">
                 Add
               </Button>
             </div>
@@ -163,7 +160,7 @@ export default function SkillsForm({ validationErrors = [] }) {
                 placeholder="English, Spanish, French, etc."
                 className="mr-2"
               />
-              <Button type="button" onClick={addLanguage}>
+              <Button type="button  " className="bg-teal-600 hover:bg-teal-700 text-white" onClick={addLanguage}>
                 Add
               </Button>
             </div>

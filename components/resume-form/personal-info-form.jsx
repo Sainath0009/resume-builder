@@ -113,7 +113,6 @@ export default function PersonalInfoForm({ validationErrors = [] }) {
       )}
 
       <div>
-        <h3 className="text-lg font-medium mb-4">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center">

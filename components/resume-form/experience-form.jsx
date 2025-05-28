@@ -6,11 +6,9 @@ import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Textarea } from "../ui/textarea"
 import { Button } from "../ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
-import { Checkbox } from "../ui/checkbox"
+import { Card, CardContent, CardDescription, CardHeader } from "../ui/card"
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle, Plus, Trash } from "lucide-react"
-import { aiFeatures } from "../../lib/utils"
 import { MagicWriter } from "../magic-writer"
 
 export default function ExperienceForm({ validationErrors = [] }) {
@@ -30,12 +28,22 @@ export default function ExperienceForm({ validationErrors = [] }) {
           },
         ],
   )
+  const [errors, setErrors] = useState({})
 
   useEffect(() => {
     if (resumeData.experience.length > 0) {
       setExperienceList(resumeData.experience)
     }
   }, [resumeData.experience])
+
+  const validateField = (name, value, index) => {
+    if (name === "company" || name === "position") {
+      if (!value.trim()) {
+        return `${name.charAt(0).toUpperCase() + name.slice(1)} is required`
+      }
+    }
+    return ""
+  }
 
   const handleChange = (index, e) => {
     const { name, value } = e.target
@@ -46,8 +54,47 @@ export default function ExperienceForm({ validationErrors = [] }) {
     }
     setExperienceList(updatedList)
 
+    // Clear error when user starts typing
+    if (errors[index]?.[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [index]: {
+          ...prev[index],
+          [name]: "",
+        },
+      }))
+    }
+
     // Update context in real-time for live preview
     updateExperience(updatedList)
+  }
+
+  const handleBlur = (index, e) => {
+    const { name, value } = e.target
+    const fieldError = validateField(name, value, index)
+
+    // Update errors state
+    if (fieldError) {
+      setErrors((prev) => ({
+        ...prev,
+        [index]: {
+          ...(prev[index] || {}),
+          [name]: fieldError,
+        },
+      }))
+    } else {
+      // Remove error if field is now valid
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        if (newErrors[index]) {
+          delete newErrors[index][name]
+          if (Object.keys(newErrors[index]).length === 0) {
+            delete newErrors[index]
+          }
+        }
+        return newErrors
+      })
+    }
   }
 
   const handleCheckboxChange = (index, checked) => {
@@ -58,8 +105,16 @@ export default function ExperienceForm({ validationErrors = [] }) {
       endDate: checked ? "" : updatedList[index].endDate,
     }
     setExperienceList(updatedList)
+    updateExperience(updatedList)
+  }
 
-    // Update context in real-time for live preview
+  const handleEnhanceDescription = (index, enhancedText) => {
+    const updatedList = [...experienceList]
+    updatedList[index] = {
+      ...updatedList[index],
+      description: enhancedText,
+    }
+    setExperienceList(updatedList)
     updateExperience(updatedList)
   }
 
@@ -84,36 +139,33 @@ export default function ExperienceForm({ validationErrors = [] }) {
     const updatedList = experienceList.filter((_, i) => i !== index)
     setExperienceList(updatedList)
     updateExperience(updatedList)
-  }
 
-  const handleEnhanceDescription = (index, enhancedText) => {
-    const updatedList = [...experienceList]
-    updatedList[index] = {
-      ...updatedList[index],
-      description: enhancedText,
-    }
-    setExperienceList(updatedList)
-    updateExperience(updatedList)
+    // Remove errors for this index
+    setErrors((prev) => {
+      const newErrors = { ...prev }
+      delete newErrors[index]
+      return newErrors
+    })
   }
 
   return (
-    <div className="space-y-6">
-      {validationErrors.length > 0 && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <ul className="list-disc pl-5">
-              {validationErrors.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
+    <Card className="border-0 shadow-none">
+      <CardContent className="px-0">
+        {validationErrors.length > 0 && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <ul className="list-disc pl-5">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {experienceList.map((experience, index) => (
-        <Card key={index} className="overflow-hidden">
-          <CardContent className="p-6">
+        {experienceList.map((experience, index) => (
+          <div key={index} className="mb-8 border-b pb-6 last:border-0">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Experience #{index + 1}</h3>
               {experienceList.length > 1 && (
@@ -133,9 +185,12 @@ export default function ExperienceForm({ validationErrors = [] }) {
                   name="company"
                   value={experience.company}
                   onChange={(e) => handleChange(index, e)}
+                  onBlur={(e) => handleBlur(index, e)}
                   placeholder="Example Corp"
+                  className={errors[index]?.company ? "border-red-500" : ""}
                   required
                 />
+                {errors[index]?.company && <p className="text-sm text-red-500">{errors[index].company}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`position-${index}`} className="flex items-center">
@@ -146,9 +201,12 @@ export default function ExperienceForm({ validationErrors = [] }) {
                   name="position"
                   value={experience.position}
                   onChange={(e) => handleChange(index, e)}
+                  onBlur={(e) => handleBlur(index, e)}
                   placeholder="Software Engineer"
+                  className={errors[index]?.position ? "border-red-500" : ""}
                   required
                 />
+                {errors[index]?.position && <p className="text-sm text-red-500">{errors[index].position}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`location-${index}`}>Location</Label>
@@ -157,6 +215,7 @@ export default function ExperienceForm({ validationErrors = [] }) {
                   name="location"
                   value={experience.location}
                   onChange={(e) => handleChange(index, e)}
+                  onBlur={(e) => handleBlur(index, e)}
                   placeholder="San Francisco, CA"
                 />
               </div>
@@ -169,6 +228,7 @@ export default function ExperienceForm({ validationErrors = [] }) {
                     type="month"
                     value={experience.startDate}
                     onChange={(e) => handleChange(index, e)}
+                    onBlur={(e) => handleBlur(index, e)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -179,6 +239,7 @@ export default function ExperienceForm({ validationErrors = [] }) {
                     type="month"
                     value={experience.endDate}
                     onChange={(e) => handleChange(index, e)}
+                    onBlur={(e) => handleBlur(index, e)}
                     disabled={experience.current}
                   />
                 </div>
@@ -186,25 +247,24 @@ export default function ExperienceForm({ validationErrors = [] }) {
             </div>
 
             <div className="flex items-center space-x-2 mb-4">
-              <Checkbox
+              <input
+                type="checkbox"
                 id={`current-${index}`}
                 checked={experience.current}
-                onCheckedChange={(checked) => {
-                  handleCheckboxChange(index, checked)
-                }}
+                onChange={(e) => handleCheckboxChange(index, e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <Label htmlFor={`current-${index}`}>I currently work here</Label>
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor={`description-${index}`}>Description</Label>
-              </div>
+              <Label htmlFor={`description-${index}`}>Description</Label>
               <Textarea
                 id={`description-${index}`}
                 name="description"
                 value={experience.description}
                 onChange={(e) => handleChange(index, e)}
+                onBlur={(e) => handleBlur(index, e)}
                 placeholder="Describe your responsibilities, achievements, and technologies used"
                 rows={4}
               />
@@ -215,13 +275,13 @@ export default function ExperienceForm({ validationErrors = [] }) {
                 inline={true}
               />
             </div>
-          </CardContent>
-        </Card>
-      ))}
+          </div>
+        ))}
 
-      <Button type="button" variant="outline" onClick={addExperience} className="w-full mt-2">
-        <Plus className="h-4 w-4 mr-2" /> Add Experience
-      </Button>
-    </div>
+        <Button type="button" variant="outline" onClick={addExperience} className="w-full mt-2">
+          <Plus className="h-4 w-4 mr-2" /> Add Experience
+        </Button>
+      </CardContent>
+    </Card>
   )
 }

@@ -132,7 +132,7 @@ export function MagicWriter({ text, onEnhance }) {
       onClick={handleEnhance}
       disabled={isEnhancing || !text || text.length < 10}
       size="sm"
-      className="gap-2 mt-2"
+      className="gap-2 mt-2   bg-teal-600 hover:bg-teal-700 text-white"
     >
       {isEnhancing ? (
         <>
@@ -141,7 +141,7 @@ export function MagicWriter({ text, onEnhance }) {
         </>
       ) : (
         <>
-          <Sparkles className="h-4 w-4" />
+          <Sparkles className="h-4 w-4 " />
           Enhance
         </>
       )}
