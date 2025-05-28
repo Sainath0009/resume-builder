@@ -6,6 +6,13 @@ import { MainNav } from "../components/main-nav"
 import {Footer} from "../components/footer"
 const inter = Inter({ subsets: ["latin"] })
 
+export const metadata = {
+  title: "ResumAI",
+  description: "ResumAI – Create Intelligent, Impactful Resumes Powered by AI",
+  icons: {
+    icon: "/logo.png",
+  },
+};
 
 
 export default function RootLayout({ children }) {

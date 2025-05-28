@@ -113,7 +113,7 @@ export default function Home() {
               whileHover={{ scale: 1.01 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
               className="relative z-10 w-full max-w-md rounded-2xl overflow-hidden shadow-lg border border-zinc-200 mx-auto"
-              style={{ maxHeight: '84vh' }} 
+              style={{ maxHeight: '84vh' }}
             >
               <Image
                 src="https://cdn.enhancv.com/images/1098/i/aHR0cHM6Ly9jZG4uZW5oYW5jdi5jb20vcHJlZGVmaW5lZC1leGFtcGxlcy92S09jYmlpSlhTeTdHdDhmdXFZSUpXdW1VYnVyU2RsR0UyYmgyR3p6L2ltYWdlLnBuZw~~.png"
@@ -125,67 +125,67 @@ export default function Home() {
             </motion.div>
 
 
-            <motion.div 
-  variants={slideInLeft} 
-  className="absolute top-10 left-2 z-20 bg-white rounded-xl shadow-md p-3 border border-zinc-200"
->
-  <div className="flex items-center space-x-3">
-    <Sparkles className="h-5 w-5 text-amber-500" />
-    <span className="text-sm font-semibold text-zinc-800">AI-Powered</span>
-  </div>
-</motion.div>
-<motion.div 
-  variants={slideInRight} 
-  className="absolute top-1/3 right-5 md:right-8 z-20"
->
-  <div className="backdrop-blur-md bg-white/80 rounded-xl shadow-lg p-3 border border-white/30 duration-200 hover:scale-[1.02] w-40 md:w-44">
-    <div className="flex items-center space-x-2 mb-3">
-      <SlidersHorizontal className="h-5 w-5 text-indigo-600" />
-      <span className="text-sm font-semibold text-zinc-800">Customize Design</span>
-    </div>
+            <motion.div
+              variants={slideInLeft}
+              className="absolute top-10 left-2 z-20 bg-white rounded-xl shadow-md p-3 border border-zinc-200"
+            >
+              <div className="flex items-center space-x-3">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                <span className="text-sm font-semibold text-zinc-800">AI-Powered</span>
+              </div>
+            </motion.div>
+            <motion.div
+              variants={slideInRight}
+              className="absolute top-1/3 right-5 md:right-8 z-20"
+            >
+              <div className="backdrop-blur-md bg-white/80 rounded-xl shadow-lg p-3 border border-white/30 duration-200 hover:scale-[1.02] w-40 md:w-44">
+                <div className="flex items-center space-x-2 mb-3">
+                  <SlidersHorizontal className="h-5 w-5 text-indigo-600" />
+                  <span className="text-sm font-semibold text-zinc-800">Customize Design</span>
+                </div>
 
-    <div className="mb-3">
-      <p className="text-[11px] uppercase font-medium text-zinc-500 mb-1.5">Colors</p>
-      <div className="flex space-x-1.5">
-        {["bg-teal-600", "bg-green-600", "bg-amber-500", "bg-indigo-600"].map((color) => (
-          <div 
-            key={color} 
-            className={`w-5 h-5 rounded-full ${color} cursor-pointer border border-white shadow-sm hover:scale-110 transition-transform`} 
-          />
-        ))}
-      </div>
-    </div>
+                <div className="mb-3">
+                  <p className="text-[11px] uppercase font-medium text-zinc-500 mb-1.5">Colors</p>
+                  <div className="flex space-x-1.5">
+                    {["bg-teal-600", "bg-green-600", "bg-amber-500", "bg-indigo-600"].map((color) => (
+                      <div
+                        key={color}
+                        className={`w-5 h-5 rounded-full ${color} cursor-pointer border border-white shadow-sm hover:scale-110 transition-transform`}
+                      />
+                    ))}
+                  </div>
+                </div>
 
-    <div>
-      <p className="text-[11px] uppercase font-medium text-zinc-500 mb-1.5">Fonts</p>
-      <div className="space-y-1.5">
-        {[
-          {name: "Sans", class: "font-sans"},
-          {name: "Serif", class: "font-serif"},
-          {name: "Mono", class: "font-mono"},
-          {name: "Script", class: "font-handwriting"}
-        ].map((font) => (
-          <div 
-            key={font.name} 
-            className={`text-xs cursor-pointer hover:text-indigo-600 ${font.class}`}
-          >
-            {font.name}
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-</motion.div>
+                <div>
+                  <p className="text-[11px] uppercase font-medium text-zinc-500 mb-1.5">Fonts</p>
+                  <div className="space-y-1.5">
+                    {[
+                      { name: "Sans", class: "font-sans" },
+                      { name: "Serif", class: "font-serif" },
+                      { name: "Mono", class: "font-mono" },
+                      { name: "Script", class: "font-handwriting" }
+                    ].map((font) => (
+                      <div
+                        key={font.name}
+                        className={`text-xs cursor-pointer hover:text-indigo-600 ${font.class}`}
+                      >
+                        {font.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
 
-<motion.div 
-  variants={slideInRight} 
-  className="absolute bottom-8 right-6 md:right-12 z-20 bg-white rounded-xl shadow-md p-3 border border-zinc-200"
->
-  <div className="flex items-center space-x-3">
-    <CheckCircle2 className="h-5 w-5 text-teal-600" />
-    <span className="text-sm font-semibold text-zinc-800">ATS Ready</span>  
-  </div>
-</motion.div>
+            <motion.div
+              variants={slideInRight}
+              className="absolute bottom-8 right-6 md:right-12 z-20 bg-white rounded-xl shadow-md p-3 border border-zinc-200"
+            >
+              <div className="flex items-center space-x-3">
+                <CheckCircle2 className="h-5 w-5 text-teal-600" />
+                <span className="text-sm font-semibold text-zinc-800">ATS Ready</span>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
