@@ -25,6 +25,7 @@ Welcome to ResumAI, the intelligent resume builder that empowers you to craft pe
 - **Forms & Validation:** React Hook Form, Zod, @hookform/resolvers
 - **UI Components:** Radix UI, Lucide Icons
 - **PDF Export:** html2canvas, jsPDF
+- **Authentication:** Clerk
 - **Charts:** Recharts
 - **State & Theme Management:** next-themes, class-variance-authority
 - **Carousel:** Embla Carousel
