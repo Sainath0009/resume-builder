@@ -5,8 +5,7 @@ import { useResumeContext } from "../context/resume-provider"
 import { Button } from "./ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
-import { Slider } from "./ui/slider"
-import { Palette, Type, Contrast, LayoutPanelLeft } from "lucide-react"
+import { Palette, Type, LayoutPanelLeft, Contrast } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "../lib/utils"
 
@@ -32,15 +31,11 @@ export function TemplateCustomizer() {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedColor, setSelectedColor] = useState(resumeData.themeColor || "teal")
   const [selectedFont, setSelectedFont] = useState(resumeData.themeFont || "sans")
-  const [spacing, setSpacing] = useState(resumeData.themeSpacing || 2)
-  const [contrast, setContrast] = useState(resumeData.themeContrast || 1)
   const [activeTab, setActiveTab] = useState("colors")
 
   useEffect(() => {
     if (resumeData.themeColor) setSelectedColor(resumeData.themeColor)
     if (resumeData.themeFont) setSelectedFont(resumeData.themeFont)
-    if (resumeData.themeSpacing) setSpacing(resumeData.themeSpacing)
-    if (resumeData.themeContrast) setContrast(resumeData.themeContrast)
   }, [resumeData])
 
   const handleSaveTheme = () => {
@@ -48,8 +43,6 @@ export function TemplateCustomizer() {
       ...prev,
       themeColor: selectedColor,
       themeFont: selectedFont,
-      themeSpacing: spacing,
-      themeContrast: contrast,
     }))
     toast.success("Template customization saved")
     setIsOpen(false)
@@ -58,8 +51,6 @@ export function TemplateCustomizer() {
   const resetToDefaults = () => {
     setSelectedColor("teal")
     setSelectedFont("sans")
-    setSpacing(2)
-    setContrast(1)
   }
 
   return (
@@ -81,7 +72,7 @@ export function TemplateCustomizer() {
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 mb-4">
+            <TabsList className="grid grid-cols-2 mb-4">
               <TabsTrigger value="colors" className="flex items-center gap-2">
                 <Palette className="h-4 w-4" />
                 Colors
@@ -89,14 +80,6 @@ export function TemplateCustomizer() {
               <TabsTrigger value="fonts" className="flex items-center gap-2">
                 <Type className="h-4 w-4" />
                 Fonts
-              </TabsTrigger>
-              <TabsTrigger value="layout" className="flex items-center gap-2">
-                <LayoutPanelLeft className="h-4 w-4" />
-                Layout
-              </TabsTrigger>
-              <TabsTrigger value="contrast" className="flex items-center gap-2">
-                <Contrast className="h-4 w-4" />
-                Contrast
               </TabsTrigger>
             </TabsList>
 
@@ -145,52 +128,6 @@ export function TemplateCustomizer() {
                     </p>
                   </button>
                 ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="layout" className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium">Section Spacing</span>
-                  <span className="text-sm text-muted-foreground">
-                    {spacing === 1 ? 'Compact' : spacing === 2 ? 'Standard' : 'Spacious'}
-                  </span>
-                </div>
-                <Slider
-                  value={[spacing]}
-                  min={1}
-                  max={3}
-                  step={1}
-                  onValueChange={([value]) => setSpacing(value)}
-                />
-                <div className="flex justify-between mt-1 text-xs text-muted-foreground">
-                  <span>Compact</span>
-                  <span>Standard</span>
-                  <span>Spacious</span>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="contrast" className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium">Contrast Level</span>
-                  <span className="text-sm text-muted-foreground">
-                    {contrast === 1 ? 'Subtle' : contrast === 2 ? 'Balanced' : 'High'}
-                  </span>
-                </div>
-                <Slider
-                  value={[contrast]}
-                  min={1}
-                  max={3}
-                  step={1}
-                  onValueChange={([value]) => setContrast(value)}
-                />
-                <div className="flex justify-between mt-1 text-xs text-muted-foreground">
-                  <span>Subtle</span>
-                  <span>Balanced</span>
-                  <span>High</span>
-                </div>
               </div>
             </TabsContent>
           </Tabs>
