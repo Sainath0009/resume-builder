@@ -283,13 +283,14 @@ export default function Builder() {
         </div>
       </header>
 
-      <TemplateSelector
-        showTemplateSelector={showTemplateSelector}
-        setShowTemplateSelector={setShowTemplateSelector}
+       <TemplateSelector
+        open={showTemplateSelector}
+        onOpenChange={setShowTemplateSelector}
         templates={templates}
         selectedTemplate={selectedTemplate}
-        handleTemplateSelect={handleTemplateSelect}
+        onSelectTemplate={handleTemplateSelect}
       />
+
 
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col gap-6 lg:flex-row">
