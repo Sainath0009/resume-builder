@@ -1,42 +1,22 @@
-"use client"
 
-import { useRef } from "react"
-import { Button } from "./ui/button"
-import { ZoomIn, ZoomOut, Download, Loader2, X } from "lucide-react"
-import ModernTemplate from "./templates/modern-template"
-import MinimalTemplate from "./templates/minimal-template"
-import ProfessionalTemplate from "./templates/professional-template"
+import { Button } from "@/components/ui/button";
+import { Download, Loader2, X, ZoomIn, ZoomOut } from "lucide-react";
 
-export function FullScreenPreview({
-  resumeData,
+export const FullScreenPreview = ({
+  resumeRef,
   scale,
   setScale,
-  setIsFullScreenPreview,
-  handleDownloadPDF,
   isGeneratingPDF,
-}) {
-  const resumeRef = useRef(null)
-
-  const renderTemplate = () => {
-    switch (resumeData.selectedTemplate) {
-      case "modern":
-        return <ModernTemplate data={resumeData} />
-      case "minimal":
-        return <MinimalTemplate data={resumeData} />
-      case "professional":
-        return <ProfessionalTemplate data={resumeData} />
-      default:
-        return <ModernTemplate data={resumeData} />
-    }
-  }
-
+  handleDownloadPDF,
+  setIsFullScreenPreview,
+  renderTemplate,
+}) => {
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col animate-fade-in">
-      {/* Header */}
-      <div className="bg-card border-b p-4 flex justify-between items-center">
+    <div className="animate-fade-in fixed inset-0 z-50 flex flex-col bg-background">
+      <div className="flex items-center justify-between border-b bg-card p-4">
         <h2 className="text-xl font-semibold">Resume Preview</h2>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-secondary rounded-md px-2 py-1">
+          <div className="flex items-center gap-2 rounded-md bg-secondary px-2 py-1">
             <Button
               variant="ghost"
               size="icon"
@@ -47,7 +27,9 @@ export function FullScreenPreview({
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium w-12 text-center">{Math.round(scale * 100)}%</span>
+            <span className="w-12 text-center text-sm font-medium">
+              {Math.round(scale * 100)}%
+            </span>
             <Button
               variant="ghost"
               size="icon"
@@ -60,7 +42,6 @@ export function FullScreenPreview({
             </Button>
           </div>
           <Button
-            variant="outline"
             onClick={handleDownloadPDF}
             className="gap-2"
             disabled={isGeneratingPDF}
@@ -68,26 +49,30 @@ export function FullScreenPreview({
           >
             {isGeneratingPDF ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 />
                 Generating...
               </>
             ) : (
               <>
-                <Download className="h-4 w-4" />
+               <Download className="h-4 w-4" />
                 Download PDF
               </>
             )}
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsFullScreenPreview(false)} aria-label="Close preview">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsFullScreenPreview(false)}
+            aria-label="Close preview"
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto bg-secondary/30 p-8 flex justify-center">
+      <div className="flex flex-1 justify-center overflow-auto bg-secondary p-8">
         <div
-          className="bg-white paper-effect mx-auto transition-transform"
+          className="paper-effect mx-auto bg-white transition-transform"
           style={{
             width: "210mm",
             transform: `scale(${scale})`,
@@ -100,5 +85,5 @@ export function FullScreenPreview({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
