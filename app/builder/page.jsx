@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import {
   Download,
   Save,
-  Wand2,
   ChevronRight,
   ChevronLeft,
   Loader2,
@@ -16,17 +15,10 @@ import {
   Award,
   FolderKanban,
   Maximize2,
-  ZoomIn,
-  ZoomOut,
   FileText,
-  Sparkles,
 } from "lucide-react"
 import { useAuth } from "@clerk/nextjs"
 import { Button } from "../../components/ui/button"
-import { Card } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
-import { Progress } from "../../components/ui/progress"
-import { ScrollArea } from "../../components/ui/scroll-area"
 import { toast } from "sonner"
 import { useResumeContext } from "../../context/resume-provider"
 import { templates } from "../../lib/templates"
@@ -45,6 +37,7 @@ import CertificationsForm from "../../components/resume-form/certifications-form
 import { FullScreenPreview } from "../../components/full-screen-preview"
 import { TemplateSelector } from "../../components/template-selector"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs"
+import { ResumePreview } from "@/components/ResumePreview"
 
 const SECTIONS = [
   { id: "personal", label: "Personal", icon: <User className="h-4 w-4" /> },
@@ -62,7 +55,7 @@ const TEMPLATE_COMPONENTS = {
 }
 
 export default function Builder() {
-  const { userId, isLoaded, isSignedIn } = useAuth()
+  const { isLoaded, isSignedIn } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { resumeData, setResumeData } = useResumeContext()
@@ -75,11 +68,11 @@ export default function Builder() {
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
-  const [isEnhancing, setIsEnhancing] = useState(false)
+
   const [scale, setScale] = useState(0.7)
   const resumeRef = useRef(null)
 
-  
+
   const TemplateComponent = useMemo(
     () => TEMPLATE_COMPONENTS[selectedTemplate] || ModernTemplate,
     [selectedTemplate],
@@ -90,16 +83,6 @@ export default function Builder() {
     return template?.name || "Template"
   }, [selectedTemplate])
 
-  // Calculate completion percentage
-  const completionPercentage = useMemo(() => {
-    const filledSections = Object.keys(resumeData).filter((key) => {
-      if (Array.isArray(resumeData[key])) return resumeData[key].length > 0
-      return Object.keys(resumeData[key]).length > 0
-    }).length
-    
-    const totalSections = Object.keys(resumeData).length
-    return Math.min(Math.floor((filledSections / totalSections) * 100), 100)
-  }, [resumeData])
 
   const handleTemplateSelect = useCallback(
     (templateId) => {
@@ -172,7 +155,7 @@ export default function Builder() {
     }
   }, [resumeData])
 
-  
+
   const navigateTab = useCallback((direction) => {
     setActiveTab((currentTab) => {
       const currentIndex = SECTIONS.findIndex(
@@ -250,74 +233,52 @@ export default function Builder() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white">
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Resume Builder</h1>
+      <header className="bg-card border-b sticky top-0 z-10 transition-colors duration-300">
+        <div className="container mx-auto px-4 py-3 flex justify-end items-center">
 
-            <div className="flex items-center gap-2">
-              <div className="hidden md:flex items-center gap-1.5 bg-zinc-100 px-3 py-1.5 rounded-full">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-xs font-medium">Auto-saving</span>
-              </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTemplateSelector(true)}
+              className="gap-2 hidden sm:flex"
+              aria-label="Change template"
+            >
+              <FileText className="h-4 w-4" />
+              <span>{templateDisplayName}</span>
+            </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowTemplateSelector(true)}
-                className="hidden gap-2 sm:flex"
-                aria-label="Change template"
-              >
-                <FileText className="h-4 w-4" />
-                {templateDisplayName}
-              </Button>
+            <TemplateCustomizer />
 
-              <TemplateCustomizer />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveDraft}
+              className="gap-2 hidden sm:flex" aria-label="Save draft"
+            >
+              <Save className="h-5 w-5" />
+            </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveDraft}
-                aria-label="Save draft"
-                className="gap-2 hidden sm:flex"
-              >
-                <Save className="h-4 w-4" />
-                <span>Save</span>
-              </Button>
-
-          
-
-              <Button
-                size="sm"
-                variant={"default"}
-                onClick={handleDownloadPDF}
-                className="gap-2 bg-teal-600 hover:bg-teal-700"
-                disabled={isGeneratingPDF}
-                aria-label="Download PDF"
-              >
-                {isGeneratingPDF ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPDF}
+              className="gap-2 bg-primary text-white  hover:bg-primary/90"
+              aria-label="Download PDF"
+            >
+              {isGeneratingPDF ? (
+                <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
+                  <span className="hidden sm:inline">Generating...</span>
+                </>
+              ) : (
+                <>
                   <Download className="h-4 w-4" />
-                )}
-                <span className="hidden sm:inline">Download PDF</span>
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-medium">Progress</h2>
-              <Badge variant="outline" className="gap-1.5 border-zinc-300">
-                <span>{completionPercentage}%</span> Complete
-              </Badge>
-            </div>
-            <Progress value={completionPercentage} className="h-2 bg-zinc-200">
-              <div
-                className="h-full bg-gradient-to-r from-teal-600 to-green-600"
-                style={{ width: `${completionPercentage}%` }}
-              />
-            </Progress>
+                  <span className="hidden sm:inline">Download </span>
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </header>
@@ -332,15 +293,15 @@ export default function Builder() {
 
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col gap-6 lg:flex-row">
-          <div className="lg:w-2/3">
-            <Card className="overflow-hidden border border-zinc-200">
-              <div className="p-4 border-b">
-                <Tabs
-                  value={activeTab}
-                  onValueChange={setActiveTab}
-                  className="w-full"
-                >
-                  <div className="mb-4">
+          <div className="animate-fade-in lg:w-1/2">
+            <div className="rounded-lg border bg-card p-6 transition-colors duration-300">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="hidden sm:block">
                     <TabsList className="grid grid-cols-3 gap-1 bg-transparent p-0.5 sm:grid-cols-6">
                       {SECTIONS.map((section) => (
                         <TabsTrigger
@@ -354,33 +315,63 @@ export default function Builder() {
                       ))}
                     </TabsList>
                   </div>
-
-                  <div className="mt-4">
-                    <TabsContent value={activeTab} className="animate-slide-in">
-                      {renderFormSection()}
-                    </TabsContent>
+                  <div className="sm:hidden">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => navigateTab("prev")}
+                        disabled={activeTab === SECTIONS[0].id}
+                        aria-label="Previous section"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm font-medium">
+                        {SECTIONS.findIndex((s) => s.id === activeTab) + 1} /{" "}
+                        {SECTIONS.length}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => navigateTab("next")}
+                        disabled={
+                          activeTab === SECTIONS[SECTIONS.length - 1].id
+                        }
+                        aria-label="Next section"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
+                </div>
 
-                  <div className="mt-6 flex justify-between border-t pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => navigateTab("prev")}
-                      disabled={activeTab === SECTIONS[0].id}
-                      className="gap-2 border-zinc-300"
-                    >
-                      <ChevronLeft className="h-4 w-4" /> Previous
-                    </Button>
-                    <Button
-                      onClick={() => navigateTab("next")}
-                      disabled={activeTab === SECTIONS[SECTIONS.length - 1].id}
-                      className="gap-2 bg-teal-600 hover:bg-teal-700 text-white"
-                    >
-                      Next <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </Tabs>
-              </div>
-            </Card>
+                <div className="mt-4">
+                  <TabsContent value={activeTab} className="animate-slide-in">
+                    {renderFormSection()}
+                  </TabsContent>
+                </div>
+
+                <div className="mt-8 flex justify-between border-t pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigateTab("prev")}
+                    disabled={activeTab === SECTIONS[0].id}
+                    className="gap-2"
+                    aria-label="Previous section"
+                  >
+                    <ChevronLeft className="h-4 w-4" /> Previous
+                  </Button>
+                  <Button
+                    onClick={() => navigateTab("next")}
+                    disabled={activeTab === SECTIONS[SECTIONS.length - 1].id}
+                    className="gap-2"
+                    aria-label="Next section"
+                  >
+                    Next <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Tabs>
+            </div>
 
             <div className="mt-6 lg:hidden">
               <Button
@@ -394,59 +385,13 @@ export default function Builder() {
             </div>
           </div>
 
-          <div className="lg:w-1/3 hidden lg:block">
-            <Card className="overflow-hidden sticky top-24 border border-zinc-200">
-              <div className="p-4 border-b flex justify-between items-center">
-                <h2 className="font-medium">Preview</h2>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-zinc-100 rounded-md px-2 py-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
-                      disabled={scale <= 0.5}
-                    >
-                      <ZoomOut className="h-3 w-3" />
-                    </Button>
-                    <span className="text-xs font-medium w-8 text-center">{Math.round(scale * 100)}%</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setScale((prev) => Math.min(1.5, prev + 0.1))}
-                      disabled={scale >= 1.5}
-                    >
-                      <ZoomIn className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setIsFullScreenPreview(true)}
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="bg-zinc-50 p-4">
-                <ScrollArea className="h-[calc(100vh-280px)]">
-                  <div
-                    className="bg-white shadow-md mx-auto transition-transform"
-                    style={{
-                      width: "100%",
-                      transform: `scale(${scale})`,
-                      transformOrigin: "top center",
-                      minHeight: "297mm",
-                    }}
-                    ref={resumeRef}
-                  >
-                    {renderTemplate()}
-                  </div>
-                </ScrollArea>
-              </div>
-            </Card>
-          </div>
+          <ResumePreview
+            resumeRef={resumeRef}
+            scale={scale}
+            setScale={setScale}
+            renderTemplate={renderTemplate}
+            setIsFullScreenPreview={setIsFullScreenPreview}
+          />
         </div>
       </div>
     </div>
