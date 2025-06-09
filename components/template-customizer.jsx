@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
 import { Palette, Type, LayoutPanelLeft, Contrast } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "../lib/utils"
+import { motion, AnimatePresence } from "framer-motion"
 
 const colorSchemes = [
   { id: "blue", name: "Blue", primary: "bg-blue-600", secondary: "bg-blue-100", text: "text-blue-600" },
@@ -66,84 +67,122 @@ export function TemplateCustomizer() {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Customize Template Design</DialogTitle>
-          </DialogHeader>
+        <AnimatePresence>
+          {isOpen && (
+            <DialogContent className="sm:max-w-[600px] p-0 border-none bg-transparent shadow-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="bg-background p-6 rounded-lg shadow-lg"
+              >
+                <DialogHeader>
+                  <DialogTitle>Customize Template Design</DialogTitle>
+                </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="colors" className="flex items-center gap-2">
-                <Palette className="h-4 w-4" />
-                Colors
-              </TabsTrigger>
-              <TabsTrigger value="fonts" className="flex items-center gap-2">
-                <Type className="h-4 w-4" />
-                Fonts
-              </TabsTrigger>
-            </TabsList>
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="grid grid-cols-2 mb-4">
+                    <TabsTrigger value="colors" className="flex items-center gap-2">
+                      <Palette className="h-4 w-4" />
+                      Colors
+                    </TabsTrigger>
+                    <TabsTrigger value="fonts" className="flex items-center gap-2">
+                      <Type className="h-4 w-4" />
+                      Fonts
+                    </TabsTrigger>
+                  </TabsList>
 
-            <TabsContent value="colors" className="space-y-4">
-              <div className="grid grid-cols-4 gap-3">
-                {colorSchemes.map((color) => (
-                  <button
-                    key={color.id}
-                    className={cn(
-                      "group flex flex-col items-center gap-1 rounded-md p-2 transition-all",
-                      selectedColor === color.id && "ring-2 ring-primary ring-offset-2"
-                    )}
-                    onClick={() => setSelectedColor(color.id)}
+                  <TabsContent value="colors" className="space-y-4">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="grid grid-cols-4 gap-3"
+                    >
+                      {colorSchemes.map((color) => (
+                        <button
+                          key={color.id}
+                          className={cn(
+                            "group flex flex-col items-center gap-1 rounded-md p-2 transition-all",
+                            selectedColor === color.id && "ring-2 ring-primary ring-offset-2"
+                          )}
+                          onClick={() => setSelectedColor(color.id)}
+                        >
+                          <div className={`${color.primary} h-10 w-full rounded-md relative overflow-hidden`}>
+                            <div className={`${color.secondary} h-4 w-full absolute bottom-0`}></div>
+                          </div>
+                          <span className="text-sm">{color.name}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="p-4 bg-muted/30 rounded-md"
+                    >
+                      <p className="text-sm text-muted-foreground">
+                        The selected color scheme will be applied to headings, borders, and accent elements.
+                      </p>
+                    </motion.div>
+                  </TabsContent>
+
+                  <TabsContent value="fonts" className="space-y-4">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="grid grid-cols-1 gap-3"
+                    >
+                      {fontOptions.map((font) => (
+                        <button
+                          key={font.id}
+                          className={cn(
+                            "text-left p-4 rounded-md border transition-all",
+                            font.class,
+                            selectedFont === font.id
+                              ? "ring-2 ring-primary ring-offset-2 bg-primary/5"
+                              : "hover:bg-muted/30"
+                          )}
+                          onClick={() => setSelectedFont(font.id)}
+                        >
+                          <h3 className="text-lg font-semibold">The quick brown fox</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {font.name} - Professional and clean
+                          </p>
+                        </button>
+                      ))}
+                    </motion.div>
+                  </TabsContent>
+                </Tabs>
+
+                <DialogFooter className="gap-2 sm:gap-0 mt-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
                   >
-                    <div className={`${color.primary} h-10 w-full rounded-md relative overflow-hidden`}>
-                      <div className={`${color.secondary} h-4 w-full absolute bottom-0`}></div>
-                    </div>
-                    <span className="text-sm">{color.name}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="p-4 bg-muted/30 rounded-md">
-                <p className="text-sm text-muted-foreground">
-                  The selected color scheme will be applied to headings, borders, and accent elements.
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="fonts" className="space-y-4">
-              <div className="grid grid-cols-1 gap-3">
-                {fontOptions.map((font) => (
-                  <button
-                    key={font.id}
-                    className={cn(
-                      "text-left p-4 rounded-md border transition-all",
-                      font.class,
-                      selectedFont === font.id
-                        ? "ring-2 ring-primary ring-offset-2 bg-primary/5"
-                        : "hover:bg-muted/30"
-                    )}
-                    onClick={() => setSelectedFont(font.id)}
+                    <Button variant="outline" onClick={resetToDefaults}>
+                      Reset Defaults
+                    </Button>
+                  </motion.div>
+                  <motion.div 
+                    className="flex gap-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
                   >
-                    <h3 className="text-lg font-semibold">The quick brown fox</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {font.name} - Professional and clean
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={resetToDefaults}>
-              Reset Defaults
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveTheme}>Apply Changes</Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveTheme}>Apply Changes</Button>
+                  </motion.div>
+                </DialogFooter>
+              </motion.div>
+            </DialogContent>
+          )}
+        </AnimatePresence>
       </Dialog>
     </>
   )
