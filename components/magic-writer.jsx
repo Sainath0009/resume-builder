@@ -6,125 +6,114 @@ import { Sparkles, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 /**
- * Magic Writer - One-click AI text enhancer for resumes
+ * AI-Powered Resume Enhancer - Optimizes text for ATS systems and professional impact
  */
 export function MagicWriter({ text, onEnhance }) {
   const [isEnhancing, setIsEnhancing] = useState(false)
 
   const handleEnhance = async () => {
     if (!text || text.trim().length < 10) {
-      toast.error("Please provide more text to enhance (at least 10 characters).")
+      toast.error("Minimum 10 characters required for enhancement")
       return
     }
 
     setIsEnhancing(true)
-    toast.loading("Enhancing content...")
+    const loadingToast = toast.loading("Optimizing content with AI...")
 
     try {
-      // Simulate API call with a delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Enhanced API request with better error handling
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `Transform this resume text to be ATS-optimized with professional language, action verbs, and quantifiable achievements. 
+                Requirements:
+                1. Use power verbs: orchestrated, spearheaded, optimized
+                2. Include metrics (%, $, numbers)
+                3. Apply ATS keywords from the job description
+                4. Maintain original meaning
+                5. Return only enhanced text
+                
+                Text to enhance: "${text}"`
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.2,
+              topP: 0.8,
+              topK: 40
+            }
+          })
+        }
+      )
 
-      // Enhancement logic directly in this component
-      const enhancedText = enhanceText(text)
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || `API error: ${response.status}`)
+      }
 
-      // Pass the enhanced text back to the parent component
+      const enhancedText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+      if (!enhancedText) throw new Error("No enhanced content returned")
+
       onEnhance(enhancedText)
-      toast.success("Resume enhanced successfully!")
+      toast.success("Resume professionally enhanced!", { id: loadingToast })
     } catch (error) {
-      console.error("Enhancement failed:", error)
-      toast.error("Something went wrong. Please try again.")
+      console.error("AI Enhancement error:", error)
+      toast.error("AI service unavailable - using standard enhancement", { id: loadingToast })
+      onEnhance(applyLocalEnhancements(text))
     } finally {
       setIsEnhancing(false)
     }
   }
 
-  // Text enhancement logic directly in this component
-  const enhanceText = (originalText) => {
-    // Basic enhancements
-    let result = originalText
-      // Fix grammar and capitalization
-      .replace(/i /g, "I ")
-      .replace(/\bi'm\b/gi, "I'm")
-      .replace(/\bim\b/gi, "I'm")
-      .replace(/\bdont\b/gi, "don't")
-      .replace(/\bcant\b/gi, "can't")
-      .replace(/\bwont\b/gi, "won't")
-      .replace(/\bhavent\b/gi, "haven't")
-      .replace(/\bcouldnt\b/gi, "couldn't")
-      .replace(/\bwouldnt\b/gi, "wouldn't")
-      .replace(/\bshouldnt\b/gi, "shouldn't")
-      .replace(/\bisnt\b/gi, "isn't")
-      .replace(/\barent\b/gi, "aren't")
+  // Optimized local enhancement with ATS keywords
+  const applyLocalEnhancements = (text) => {
+    const transformations = [
+      // Grammar fixes
+      [/\bi\b/g, "I"],
+      [/\bi'm\b/gi, "I am"],
+      [/\bim\b/gi, "I am"],
+      [/\bdon't\b/gi, "do not"],
+      [/\bcan't\b/gi, "cannot"],
+      
+      // ATS action verbs
+      [/worked on/g, "developed"],
+      [/made/g, "created"],
+      [/did/g, "implemented"],
+      [/helped/g, "collaborated on"],
+      [/used/g, "utilized"],
+      [/good/g, "exceptional"],
+      [/team player/g, "cross-functional collaborator"],
+      [/responsible for/g, "accountable for"],
+      [/in charge of/g, "oversaw"],
+      
+      // Quantification injection
+      [/improved/g, "improved by 25%"],
+      [/increased/g, "increased by 30%"],
+      [/reduced/g, "reduced by 20%"],
+      [/saved/g, "saved $"],
+      [/managed/g, "managed team of "],
+      
+      // Professional phrases
+      [/problem solving/g, "complex problem resolution"],
+      [/hard worker/g, "results-driven professional"],
+      [/quick learner/g, "rapid skill acquisition"],
+    ]
 
-      // Improve professional language
-      .replace(/worked on/gi, "developed")
-      .replace(/made/gi, "created")
-      .replace(/did/gi, "executed")
-      .replace(/helped/gi, "collaborated")
-      .replace(/used/gi, "utilized")
-      .replace(/good/gi, "excellent")
-      .replace(/team player/gi, "collaborative professional")
-      .replace(/responsible for/gi, "led")
-      .replace(/in charge of/gi, "managed")
-      .replace(/started/gi, "initiated")
-      .replace(/finished/gi, "completed")
-      .replace(/talked to/gi, "communicated with")
-      .replace(/talked with/gi, "consulted with")
-      .replace(/improved/gi, "enhanced")
-      .replace(/made better/gi, "optimized")
-      .replace(/fixed/gi, "resolved")
-      .replace(/built/gi, "developed")
-      .replace(/created/gi, "designed and implemented")
-      .replace(/managed/gi, "orchestrated")
-      .replace(/led/gi, "spearheaded")
+    let enhanced = text
+    transformations.forEach(([regex, replacement]) => {
+      enhanced = enhanced.replace(regex, replacement)
+    })
 
-      // Add ATS-friendly terms
-      .replace(/solved problems/gi, "resolved complex issues")
-      .replace(/met goals/gi, "achieved objectives")
-      .replace(/worked with team/gi, "collaborated cross-functionally")
-      .replace(/made decisions/gi, "exercised critical decision-making")
-      .replace(/saved money/gi, "reduced operational costs")
-      .replace(/saved time/gi, "improved efficiency")
-      .replace(/increased sales/gi, "drove revenue growth")
-      .replace(/helped customers/gi, "delivered exceptional customer service")
+    // Ensure professional formatting
+    enhanced = enhanced.replace(/(^|[.!?]\s+)([a-z])/g, (m) => m.toUpperCase())
+    if (!enhanced.endsWith(".")) enhanced += "."
 
-      // Fix common spelling mistakes
-      .replace(/recieve/gi, "receive")
-      .replace(/seperate/gi, "separate")
-      .replace(/definately/gi, "definitely")
-      .replace(/occured/gi, "occurred")
-      .replace(/untill/gi, "until")
-      .replace(/accross/gi, "across")
-      .replace(/succesful/gi, "successful")
-      .replace(/accomodate/gi, "accommodate")
-      .replace(/acheive/gi, "achieve")
-      .replace(/beleive/gi, "believe")
-      .replace(/concious/gi, "conscious")
-      .replace(/foriegn/gi, "foreign")
-      .replace(/wierd/gi, "weird")
-      .replace(/neccessary/gi, "necessary")
-      .replace(/occasionaly/gi, "occasionally")
-      .replace(/proffesional/gi, "professional")
-      .replace(/reccommend/gi, "recommend")
-      .replace(/refered/gi, "referred")
-      .replace(/relevent/gi, "relevant")
-
-      // Add metrics if none exist (only if not already present)
-      .replace(/improved (?!by \d+%)/gi, "improved by 20% ")
-      .replace(/increased (?!by \d+%)/gi, "increased by 30% ")
-      .replace(/reduced (?!by \d+%)/gi, "reduced by 15% ")
-      .replace(/enhanced (?!by \d+%)/gi, "enhanced by 25% ")
-      .replace(/accelerated (?!by \d+%)/gi, "accelerated by 40% ")
-
-    // Capitalize first letter of sentences
-    result = result.replace(/(^\s*|[.!?]\s*)[a-z]/g, (match) => match.toUpperCase())
-
-    // Ensure proper ending punctuation
-    if (!result.match(/[.!?]$/)) {
-      result += "."
-    }
-
-    return result
+    return enhanced
   }
 
   return (
@@ -132,17 +121,18 @@ export function MagicWriter({ text, onEnhance }) {
       onClick={handleEnhance}
       disabled={isEnhancing || !text || text.length < 10}
       size="sm"
-      className="gap-2 mt-2   bg-teal-600 hover:bg-teal-700 text-white"
+      className="gap-2 mt-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-md transition-all"
+      aria-label="Enhance text with AI"
     >
       {isEnhancing ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
-          Enhancing...
+          <span className="ml-2">Optimizing...</span>
         </>
       ) : (
         <>
-          <Sparkles className="h-4 w-4 " />
-          Enhance
+          <Sparkles className="h-4 w-4" />
+          <span className="ml-2">AI Enhance</span>
         </>
       )}
     </Button>
