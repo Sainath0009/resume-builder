@@ -6,27 +6,29 @@ import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Textarea } from "../ui/textarea"
 import { Button } from "../ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
+import { Card, CardContent } from "../ui/card"
 import { Alert, AlertDescription } from "../ui/alert"
-import { AlertCircle, Plus, Trash } from "lucide-react"
+import { AlertCircle, Plus, Trash, CalendarIcon } from "lucide-react"
 import { MagicWriter } from "../magic-writer"
+import { format } from "date-fns"
+import { DayPicker } from "react-day-picker"
+import "react-day-picker/dist/style.css"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
+import { cn } from "@/lib/utils"
 
+const initialEducation = {
+  institution: "",
+  degree: "",
+  field: "",
+  startDate: "",
+  endDate: "",
+  description: "",
+}
 
 export default function EducationForm({ validationErrors = [] }) {
   const { resumeData, updateEducation } = useResumeContext()
   const [educationList, setEducationList] = useState(
-    resumeData.education.length > 0
-      ? resumeData.education
-      : [
-          {
-            institution: "",
-            degree: "",
-            field: "",
-            startDate: "",
-            endDate: "",
-            description: "",
-          },
-        ],
+    resumeData.education.length > 0 ? resumeData.education : [initialEducation]
   )
   const [errors, setErrors] = useState({})
 
@@ -36,105 +38,115 @@ export default function EducationForm({ validationErrors = [] }) {
     }
   }, [resumeData.education])
 
-  const validateField = (name, value, index) => {
-    if (name === "institution" || name === "degree") {
-      if (!value.trim()) {
-        return `${name.charAt(0).toUpperCase() + name.slice(1)} is required`
-      }
+  const validateField = (name, value) => {
+    if ((name === "institution" || name === "degree") && !value.trim()) {
+      return `${name.charAt(0).toUpperCase() + name.slice(1)} is required`
     }
     return ""
+  }
+
+  const updateEducationList = (updatedList) => {
+    setEducationList(updatedList)
+    updateEducation(updatedList)
   }
 
   const handleChange = (index, e) => {
     const { name, value } = e.target
     const updatedList = [...educationList]
-    updatedList[index] = {
-      ...updatedList[index],
-      [name]: value,
-    }
-    setEducationList(updatedList)
+    updatedList[index] = { ...updatedList[index], [name]: value }
+    updateEducationList(updatedList)
 
-    // Clear error when user starts typing
     if (errors[index]?.[name]) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
-        [index]: {
-          ...prev[index],
-          [name]: "",
-        },
+        [index]: { ...prev[index], [name]: "" }
       }))
     }
+  }
 
-    // Update context in real-time for live preview
-    updateEducation(updatedList)
+  const handleDateChange = (index, name, date) => {
+    const formattedDate = date ? format(date, "yyyy-MM") : ""
+    const updatedList = [...educationList]
+    updatedList[index] = { ...updatedList[index], [name]: formattedDate }
+    updateEducationList(updatedList)
   }
 
   const handleBlur = (index, e) => {
     const { name, value } = e.target
-    const fieldError = validateField(name, value, index)
+    const fieldError = validateField(name, value)
 
-    // Update errors state
-    if (fieldError) {
-      setErrors((prev) => ({
-        ...prev,
-        [index]: {
-          ...(prev[index] || {}),
-          [name]: fieldError,
-        },
-      }))
-    } else {
-      // Remove error if field is now valid
-      setErrors((prev) => {
-        const newErrors = { ...prev }
-        if (newErrors[index]) {
-          delete newErrors[index][name]
-          if (Object.keys(newErrors[index]).length === 0) {
-            delete newErrors[index]
-          }
-        }
-        return newErrors
-      })
-    }
+    setErrors(prev => ({
+      ...prev,
+      [index]: { ...prev[index], [name]: fieldError || undefined }
+    }))
   }
 
-  const handleEnhanceDescription = (index, enhancedText) => {
+  const handleEnhance = (index, enhancedText) => {
     const updatedList = [...educationList]
-    updatedList[index] = {
-      ...updatedList[index],
-      description: enhancedText,
-    }
-    setEducationList(updatedList)
-    updateEducation(updatedList)
+    updatedList[index] = { ...updatedList[index], description: enhancedText }
+    updateEducationList(updatedList)
   }
 
-  const addEducation = () => {
-    const updatedList = [
-      ...educationList,
-      {
-        institution: "",
-        degree: "",
-        field: "",
-        startDate: "",
-        endDate: "",
-        description: "",
-      },
-    ]
-    setEducationList(updatedList)
-    updateEducation(updatedList)
-  }
+  const addEducation = () => updateEducationList([...educationList, initialEducation])
 
   const removeEducation = (index) => {
     const updatedList = educationList.filter((_, i) => i !== index)
-    setEducationList(updatedList)
-    updateEducation(updatedList)
-
-    // Remove errors for this index
-    setErrors((prev) => {
+    updateEducationList(updatedList)
+    setErrors(prev => {
       const newErrors = { ...prev }
       delete newErrors[index]
       return newErrors
     })
   }
+
+  const renderDatePicker = (index, name, label) => (
+    <div className="space-y-2">
+      <Label htmlFor={`${name}-${index}`}>{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className={cn(
+            "w-full justify-start text-left font-normal",
+            !educationList[index][name] && "text-muted-foreground"
+          )}>
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {educationList[index][name] 
+              ? format(new Date(educationList[index][name]), "MMM yyyy") 
+              : <span>Pick a date</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <DayPicker
+            mode="single"
+            selected={educationList[index][name] ? new Date(educationList[index][name]) : undefined}
+            onSelect={(date) => handleDateChange(index, name, date)}
+            fromYear={1960}
+            toYear={name === "endDate" ? new Date().getFullYear() + 5 : new Date().getFullYear()}
+            captionLayout="dropdown"
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+
+  const renderInputField = (index, name, label, required = false) => (
+    <div className="space-y-2">
+      <Label htmlFor={`${name}-${index}`} className="flex items-center">
+        {label} {required && <span className="text-red-500 ml-1">*</span>}
+      </Label>
+      <Input
+        id={`${name}-${index}`}
+        name={name}
+        value={educationList[index][name]}
+        onChange={(e) => handleChange(index, e)}
+        onBlur={(e) => handleBlur(index, e)}
+        placeholder={label}
+        className={errors[index]?.[name] ? "border-red-500" : ""}
+        required={required}
+      />
+      {errors[index]?.[name] && <p className="text-sm text-red-500">{errors[index][name]}</p>}
+    </div>
+  )
 
   return (
     <Card className="border-0 shadow-none">
@@ -144,9 +156,7 @@ export default function EducationForm({ validationErrors = [] }) {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               <ul className="list-disc pl-5">
-                {validationErrors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
+                {validationErrors.map((error, i) => <li key={i}>{error}</li>)}
               </ul>
             </AlertDescription>
           </Alert>
@@ -164,72 +174,13 @@ export default function EducationForm({ validationErrors = [] }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor={`institution-${index}`} className="flex items-center">
-                  Institution <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Input
-                  id={`institution-${index}`}
-                  name="institution"
-                  value={education.institution}
-                  onChange={(e) => handleChange(index, e)}
-                  onBlur={(e) => handleBlur(index, e)}
-                  placeholder="University of Example"
-                  className={errors[index]?.institution ? "border-red-500" : ""}
-                  required
-                />
-                {errors[index]?.institution && <p className="text-sm text-red-500">{errors[index].institution}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`degree-${index}`} className="flex items-center">
-                  Degree <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Input
-                  id={`degree-${index}`}
-                  name="degree"
-                  value={education.degree}
-                  onChange={(e) => handleChange(index, e)}
-                  onBlur={(e) => handleBlur(index, e)}
-                  placeholder="Bachelor of Science"
-                  className={errors[index]?.degree ? "border-red-500" : ""}
-                  required
-                />
-                {errors[index]?.degree && <p className="text-sm text-red-500">{errors[index].degree}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`field-${index}`}>Field of Study</Label>
-                <Input
-                  id={`field-${index}`}
-                  name="field"
-                  value={education.field}
-                  onChange={(e) => handleChange(index, e)}
-                  onBlur={(e) => handleBlur(index, e)}
-                  placeholder="Computer Science"
-                />
-              </div>
+              {renderInputField(index, "institution", "Institution", true)}
+              {renderInputField(index, "degree", "Degree", true)}
+              {renderInputField(index, "field", "Field of Study")}
+              
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <Label htmlFor={`startDate-${index}`}>Start Date</Label>
-                  <Input
-                    id={`startDate-${index}`}
-                    name="startDate"
-                    type="month"
-                    value={education.startDate}
-                    onChange={(e) => handleChange(index, e)}
-                    onBlur={(e) => handleBlur(index, e)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`endDate-${index}`}>End Date</Label>
-                  <Input
-                    id={`endDate-${index}`}
-                    name="endDate"
-                    type="month"
-                    value={education.endDate}
-                    onChange={(e) => handleChange(index, e)}
-                    onBlur={(e) => handleBlur(index, e)}
-                  />
-                </div>
+                {renderDatePicker(index, "startDate", "Start Date")}
+                {renderDatePicker(index, "endDate", "End Date")}
               </div>
             </div>
 
@@ -246,7 +197,7 @@ export default function EducationForm({ validationErrors = [] }) {
               />
               <MagicWriter
                 text={education.description}
-                onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
+                onEnhance={(enhancedText) => handleEnhance(index, enhancedText)}
                 label="✨ Enhance with AI"
                 inline={true}
               />

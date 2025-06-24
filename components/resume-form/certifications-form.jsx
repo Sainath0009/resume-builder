@@ -6,9 +6,18 @@ import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Textarea } from "../ui/textarea"
 import { Button } from "../ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
+import { Card, CardContent } from "../ui/card"
 import { Alert, AlertDescription } from "../ui/alert"
-import { AlertCircle, Plus, Trash } from "lucide-react"
+import { AlertCircle, Plus, Trash, CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { DayPicker } from "react-day-picker"
+import "react-day-picker/dist/style.css"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../ui/popover"
+import { cn } from "@/lib/utils"
 
 export default function CertificationsForm({ validationErrors = [] }) {
   const { resumeData, updateCertifications } = useResumeContext()
@@ -42,8 +51,17 @@ export default function CertificationsForm({ validationErrors = [] }) {
       [name]: value,
     }
     setCertificationsList(updatedList)
+    updateCertifications(updatedList)
+  }
 
-    // Update context in real-time for live preview
+  const handleDateChange = (index, name, date) => {
+    const formattedDate = date ? format(date, "yyyy-MM") : ""
+    const updatedList = [...certificationsList]
+    updatedList[index] = {
+      ...updatedList[index],
+      [name]: formattedDate,
+    }
+    setCertificationsList(updatedList)
     updateCertifications(updatedList)
   }
 
@@ -85,6 +103,7 @@ export default function CertificationsForm({ validationErrors = [] }) {
             </AlertDescription>
           </Alert>
         )}
+
         {certificationsList.map((certification, index) => (
           <div key={index} className="mb-8 border-b pb-6 last:border-0">
             <div className="flex justify-between items-center mb-4">
@@ -119,23 +138,67 @@ export default function CertificationsForm({ validationErrors = [] }) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`date-${index}`}>Issue Date</Label>
-                <Input
-                  id={`date-${index}`}
-                  name="date"
-                  type="month"
-                  value={certification.date}
-                  onChange={(e) => handleChange(index, e)}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !certification.date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {certification.date ? (
+                        format(new Date(certification.date), "MMM yyyy")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <DayPicker
+                      mode="single"
+                      selected={certification.date ? new Date(certification.date) : undefined}
+                      onSelect={(date) => handleDateChange(index, "date", date)}
+                      fromYear={1960}
+                      toYear={new Date().getFullYear()}
+                      captionLayout="dropdown"
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`expiration-${index}`}>Expiration Date (if applicable)</Label>
-                <Input
-                  id={`expiration-${index}`}
-                  name="expiration"
-                  type="month"
-                  value={certification.expiration}
-                  onChange={(e) => handleChange(index, e)}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !certification.expiration && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {certification.expiration ? (
+                        format(new Date(certification.expiration), "MMM yyyy")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <DayPicker
+                      mode="single"
+                      selected={certification.expiration ? new Date(certification.expiration) : undefined}
+                      onSelect={(date) => handleDateChange(index, "expiration", date)}
+                      fromYear={1960}
+                      toYear={new Date().getFullYear() + 10}
+                      captionLayout="dropdown"
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`credentialID-${index}`}>Credential ID</Label>

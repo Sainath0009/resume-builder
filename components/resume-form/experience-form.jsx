@@ -2,31 +2,34 @@
 
 import { useState, useEffect } from "react"
 import { useResumeContext } from "../../context/resume-provider"
-import { Input } from "../ui/input"
-import { Label } from "../ui/label"
+import { Input} from "../ui/input"
 import { Textarea } from "../ui/textarea"
+import { Label } from "../ui/label"
 import { Button } from "../ui/button"
-import { Card, CardContent, CardDescription, CardHeader } from "../ui/card"
+import { Card, CardContent } from "../ui/card"
 import { Alert, AlertDescription } from "../ui/alert"
-import { AlertCircle, Plus, Trash } from "lucide-react"
+import { AlertCircle, Plus, Trash, CalendarIcon } from "lucide-react"
 import { MagicWriter } from "../magic-writer"
+import { format } from "date-fns"
+import { DayPicker } from "react-day-picker"
+import "react-day-picker/dist/style.css"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
+import { cn } from "@/lib/utils"
+
+const initialExperience = {
+  company: "",
+  position: "",
+  location: "",
+  startDate: "",
+  endDate: "",
+  current: false,
+  description: "",
+}
 
 export default function ExperienceForm({ validationErrors = [] }) {
   const { resumeData, updateExperience } = useResumeContext()
   const [experienceList, setExperienceList] = useState(
-    resumeData.experience.length > 0
-      ? resumeData.experience
-      : [
-          {
-            company: "",
-            position: "",
-            location: "",
-            startDate: "",
-            endDate: "",
-            current: false,
-            description: "",
-          },
-        ],
+    resumeData.experience.length > 0 ? resumeData.experience : [initialExperience]
   )
   const [errors, setErrors] = useState({})
 
@@ -36,65 +39,47 @@ export default function ExperienceForm({ validationErrors = [] }) {
     }
   }, [resumeData.experience])
 
-  const validateField = (name, value, index) => {
-    if (name === "company" || name === "position") {
-      if (!value.trim()) {
-        return `${name.charAt(0).toUpperCase() + name.slice(1)} is required`
-      }
+  const validateField = (name, value) => {
+    if ((name === "company" || name === "position") && !value.trim()) {
+      return `${name.charAt(0).toUpperCase() + name.slice(1)} is required`
     }
     return ""
+  }
+
+  const updateExperienceList = (updatedList) => {
+    setExperienceList(updatedList)
+    updateExperience(updatedList)
   }
 
   const handleChange = (index, e) => {
     const { name, value } = e.target
     const updatedList = [...experienceList]
-    updatedList[index] = {
-      ...updatedList[index],
-      [name]: value,
-    }
-    setExperienceList(updatedList)
+    updatedList[index] = { ...updatedList[index], [name]: value }
+    updateExperienceList(updatedList)
 
-    // Clear error when user starts typing
     if (errors[index]?.[name]) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
-        [index]: {
-          ...prev[index],
-          [name]: "",
-        },
+        [index]: { ...prev[index], [name]: "" }
       }))
     }
+  }
 
-    // Update context in real-time for live preview
-    updateExperience(updatedList)
+  const handleDateChange = (index, name, date) => {
+    const formattedDate = date ? format(date, "yyyy-MM") : ""
+    const updatedList = [...experienceList]
+    updatedList[index] = { ...updatedList[index], [name]: formattedDate }
+    updateExperienceList(updatedList)
   }
 
   const handleBlur = (index, e) => {
     const { name, value } = e.target
-    const fieldError = validateField(name, value, index)
+    const fieldError = validateField(name, value)
 
-    // Update errors state
-    if (fieldError) {
-      setErrors((prev) => ({
-        ...prev,
-        [index]: {
-          ...(prev[index] || {}),
-          [name]: fieldError,
-        },
-      }))
-    } else {
-      // Remove error if field is now valid
-      setErrors((prev) => {
-        const newErrors = { ...prev }
-        if (newErrors[index]) {
-          delete newErrors[index][name]
-          if (Object.keys(newErrors[index]).length === 0) {
-            delete newErrors[index]
-          }
-        }
-        return newErrors
-      })
-    }
+    setErrors(prev => ({
+      ...prev,
+      [index]: { ...prev[index], [name]: fieldError || undefined }
+    }))
   }
 
   const handleCheckboxChange = (index, checked) => {
@@ -104,49 +89,84 @@ export default function ExperienceForm({ validationErrors = [] }) {
       current: checked,
       endDate: checked ? "" : updatedList[index].endDate,
     }
-    setExperienceList(updatedList)
-    updateExperience(updatedList)
+    updateExperienceList(updatedList)
   }
 
-  const handleEnhanceDescription = (index, enhancedText) => {
+  const handleEnhance = (index, enhancedText) => {
     const updatedList = [...experienceList]
-    updatedList[index] = {
-      ...updatedList[index],
-      description: enhancedText,
-    }
-    setExperienceList(updatedList)
-    updateExperience(updatedList)
+    updatedList[index] = { ...updatedList[index], description: enhancedText }
+    updateExperienceList(updatedList)
   }
 
-  const addExperience = () => {
-    const updatedList = [
-      ...experienceList,
-      {
-        company: "",
-        position: "",
-        location: "",
-        startDate: "",
-        endDate: "",
-        current: false,
-        description: "",
-      },
-    ]
-    setExperienceList(updatedList)
-    updateExperience(updatedList)
-  }
+  const addExperience = () => updateExperienceList([...experienceList, initialExperience])
 
   const removeExperience = (index) => {
     const updatedList = experienceList.filter((_, i) => i !== index)
-    setExperienceList(updatedList)
-    updateExperience(updatedList)
-
-    // Remove errors for this index
-    setErrors((prev) => {
+    updateExperienceList(updatedList)
+    setErrors(prev => {
       const newErrors = { ...prev }
       delete newErrors[index]
       return newErrors
     })
   }
+
+  const renderDatePicker = (index, name, label, disabled = false) => (
+    <div className="space-y-2">
+      <Label htmlFor={`${name}-${index}`}>{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !experienceList[index][name] && "text-muted-foreground"
+            )}
+            disabled={disabled}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {disabled ? (
+              <span>Present</span>
+            ) : experienceList[index][name] ? (
+              format(new Date(experienceList[index][name]), "MMM yyyy")
+            ) : (
+              <span>Pick a date</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <DayPicker
+            mode="single"
+            selected={experienceList[index][name] ? new Date(experienceList[index][name]) : undefined}
+            onSelect={(date) => handleDateChange(index, name, date)}
+            fromYear={1960}
+            toYear={name === "endDate" ? new Date().getFullYear() + 5 : new Date().getFullYear()}
+            captionLayout="dropdown"
+            initialFocus
+            disabled={disabled}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+
+  const renderInputField = (index, name, label, required = false) => (
+    <div className="space-y-2">
+      <Label htmlFor={`${name}-${index}`} className="flex items-center">
+        {label} {required && <span className="text-red-500 ml-1">*</span>}
+      </Label>
+      <Input
+        id={`${name}-${index}`}
+        name={name}
+        value={experienceList[index][name]}
+        onChange={(e) => handleChange(index, e)}
+        onBlur={(e) => handleBlur(index, e)}
+        placeholder={label}
+        className={errors[index]?.[name] ? "border-red-500" : ""}
+        required={required}
+      />
+      {errors[index]?.[name] && <p className="text-sm text-red-500">{errors[index][name]}</p>}
+    </div>
+  )
 
   return (
     <Card className="border-0 shadow-none">
@@ -156,9 +176,7 @@ export default function ExperienceForm({ validationErrors = [] }) {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               <ul className="list-disc pl-5">
-                {validationErrors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
+                {validationErrors.map((error, i) => <li key={i}>{error}</li>)}
               </ul>
             </AlertDescription>
           </Alert>
@@ -176,73 +194,13 @@ export default function ExperienceForm({ validationErrors = [] }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor={`company-${index}`} className="flex items-center">
-                  Company <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Input
-                  id={`company-${index}`}
-                  name="company"
-                  value={experience.company}
-                  onChange={(e) => handleChange(index, e)}
-                  onBlur={(e) => handleBlur(index, e)}
-                  placeholder="Example Corp"
-                  className={errors[index]?.company ? "border-red-500" : ""}
-                  required
-                />
-                {errors[index]?.company && <p className="text-sm text-red-500">{errors[index].company}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`position-${index}`} className="flex items-center">
-                  Position <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Input
-                  id={`position-${index}`}
-                  name="position"
-                  value={experience.position}
-                  onChange={(e) => handleChange(index, e)}
-                  onBlur={(e) => handleBlur(index, e)}
-                  placeholder="Software Engineer"
-                  className={errors[index]?.position ? "border-red-500" : ""}
-                  required
-                />
-                {errors[index]?.position && <p className="text-sm text-red-500">{errors[index].position}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`location-${index}`}>Location</Label>
-                <Input
-                  id={`location-${index}`}
-                  name="location"
-                  value={experience.location}
-                  onChange={(e) => handleChange(index, e)}
-                  onBlur={(e) => handleBlur(index, e)}
-                  placeholder="San Francisco, CA"
-                />
-              </div>
+              {renderInputField(index, "company", "Company", true)}
+              {renderInputField(index, "position", "Position", true)}
+              {renderInputField(index, "location", "Location")}
+              
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <Label htmlFor={`startDate-${index}`}>Start Date</Label>
-                  <Input
-                    id={`startDate-${index}`}
-                    name="startDate"
-                    type="month"
-                    value={experience.startDate}
-                    onChange={(e) => handleChange(index, e)}
-                    onBlur={(e) => handleBlur(index, e)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`endDate-${index}`}>End Date</Label>
-                  <Input
-                    id={`endDate-${index}`}
-                    name="endDate"
-                    type="month"
-                    value={experience.endDate}
-                    onChange={(e) => handleChange(index, e)}
-                    onBlur={(e) => handleBlur(index, e)}
-                    disabled={experience.current}
-                  />
-                </div>
+                {renderDatePicker(index, "startDate", "Start Date")}
+                {renderDatePicker(index, "endDate", "End Date", experience.current)}
               </div>
             </div>
 
@@ -270,7 +228,7 @@ export default function ExperienceForm({ validationErrors = [] }) {
               />
               <MagicWriter
                 text={experience.description}
-                onEnhance={(enhancedText) => handleEnhanceDescription(index, enhancedText)}
+                onEnhance={(enhancedText) => handleEnhance(index, enhancedText)}
                 label="✨ Enhance with AI"
                 inline={true}
               />

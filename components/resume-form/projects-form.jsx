@@ -1,16 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useResumeContext } from "../../context/resume-provider"
+import { useResumeContext } from "@/context/resume-provider"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Textarea } from "../ui/textarea"
 import { Button } from "../ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
+import { Card, CardContent } from "../ui/card"
 import { Alert, AlertDescription } from "../ui/alert"
-import { AlertCircle, Plus, Trash } from "lucide-react"
-
+import { AlertCircle, Plus, Trash, CalendarIcon } from "lucide-react"
 import { MagicWriter } from "../magic-writer"
+import { format } from "date-fns"
+import { DayPicker } from "react-day-picker"
+import "react-day-picker/dist/style.css"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../ui/popover"
+import { cn } from "@/lib/utils"
+
 export default function ProjectsForm({ validationErrors = [] }) {
   const { resumeData, updateProjects } = useResumeContext()
   const [projectsList, setProjectsList] = useState(
@@ -42,8 +51,17 @@ export default function ProjectsForm({ validationErrors = [] }) {
       [name]: value,
     }
     setProjectsList(updatedList)
+    updateProjects(updatedList)
+  }
 
-    // Update context in real-time for live preview
+  const handleDateChange = (index, name, date) => {
+    const formattedDate = date ? format(date, "yyyy-MM") : ""
+    const updatedList = [...projectsList]
+    updatedList[index] = {
+      ...updatedList[index],
+      [name]: formattedDate,
+    }
+    setProjectsList(updatedList)
     updateProjects(updatedList)
   }
 
@@ -81,7 +99,6 @@ export default function ProjectsForm({ validationErrors = [] }) {
 
   return (
     <Card className="border-0 shadow-none">
-    
       <CardContent className="px-0">
         {validationErrors.length > 0 && (
           <Alert variant="destructive" className="mb-6">
@@ -95,6 +112,7 @@ export default function ProjectsForm({ validationErrors = [] }) {
             </AlertDescription>
           </Alert>
         )}
+
         {projectsList.map((project, index) => (
           <div key={index} className="mb-8 border-b pb-6 last:border-0">
             <div className="flex justify-between items-center mb-4">
@@ -140,23 +158,67 @@ export default function ProjectsForm({ validationErrors = [] }) {
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2">
                   <Label htmlFor={`startDate-${index}`}>Start Date</Label>
-                  <Input
-                    id={`startDate-${index}`}
-                    name="startDate"
-                    type="month"
-                    value={project.startDate}
-                    onChange={(e) => handleChange(index, e)}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !project.startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {project.startDate ? (
+                          format(new Date(project.startDate), "MMM yyyy")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <DayPicker
+                        mode="single"
+                        selected={project.startDate ? new Date(project.startDate) : undefined}
+                        onSelect={(date) => handleDateChange(index, "startDate", date)}
+                        fromYear={1960}
+                        toYear={new Date().getFullYear()}
+                        captionLayout="dropdown"
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`endDate-${index}`}>End Date</Label>
-                  <Input
-                    id={`endDate-${index}`}
-                    name="endDate"
-                    type="month"
-                    value={project.endDate}
-                    onChange={(e) => handleChange(index, e)}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !project.endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {project.endDate ? (
+                          format(new Date(project.endDate), "MMM yyyy")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <DayPicker
+                        mode="single"
+                        selected={project.endDate ? new Date(project.endDate) : undefined}
+                        onSelect={(date) => handleDateChange(index, "endDate", date)}
+                        fromYear={1960}
+                        toYear={new Date().getFullYear() + 5}
+                        captionLayout="dropdown"
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
