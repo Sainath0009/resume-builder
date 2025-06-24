@@ -354,7 +354,7 @@ export default function Home() {
 
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <Link href={`/builder?template=${template.id}`}>
-                        <Button variant="secondary" className="bg-white shadow-sm">
+                        <Button variant="secondary" className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
                           Use Template
                         </Button>
                       </Link>
