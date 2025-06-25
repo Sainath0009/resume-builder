@@ -12,7 +12,6 @@ Welcome to ResumAI, the intelligent resume builder that empowers you to craft pe
 - 🎨 Beautiful, responsive, and modern UI
 - 📄 Download as PDF (using `jspdf` and `html2canvas`)
 - 🎛️ Real-time form validation with `React Hook Form` + `Zod`
-- 🌙 Light / Dark theme support via `next-themes`
 - 📱 Mobile-first and responsive
 - 🚀 Built with **Next.js 15**, **Tailwind CSS**, and **Framer Motion**
 - 🎯 Smart component architecture using `Radix UI`
