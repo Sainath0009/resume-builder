@@ -1,4 +1,5 @@
 "use client"
+import { useState } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import Image from "next/image"
@@ -8,6 +9,7 @@ import { Card, CardContent } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { templates } from "../lib/templates"
 import { containerVariants, itemVariants, slideInLeft, slideInRight, fadeIn } from "../lib/motion"
+import { useUser } from "@clerk/nextjs"
 
 const FEATURES = [
   {
@@ -43,6 +45,9 @@ const STATS = [
 ]
 
 export default function Home() {
+  const { isSignedIn, isLoaded, user } = useUser()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
   const scrollToTemplates = () => {
     const templatesSection = document.getElementById("templates")
     templatesSection?.scrollIntoView({ behavior: "smooth" })
@@ -50,6 +55,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-100 to-white">
+
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-8 md:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -75,11 +81,27 @@ export default function Home() {
             </motion.p>
 
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
-              <Link href="/builder" passHref>
-                <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white">
-                  Get Started <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+              {!isLoaded ? (
+                <div className="flex space-x-3">
+                  <Button variant="outline" className="border-zinc-300" disabled>
+                    Loading...
+                  </Button>
+                </div>
+              ) : isSignedIn ? (
+                <Link href="/builder" passHref>
+                  <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white">
+                   Create Resume<ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : (
+                <div className="flex space-x-3">
+                  <Link href="/sign-up">
+                    <Button className="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 text-white shadow-md hover:shadow-lg transition-all hover:scale-[1.02]">
+                      Create Resume
+                    </Button>
+                  </Link>
+                </div>
+              )}
               <Button size="lg" variant="outline" className="border-zinc-300" onClick={scrollToTemplates}>
                 View Templates
               </Button>
@@ -123,7 +145,6 @@ export default function Home() {
                 className="w-full h-auto object-contain"
               />
             </motion.div>
-
 
             <motion.div
               variants={slideInLeft}
@@ -353,11 +374,19 @@ export default function Home() {
                     </div>
 
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Link href={`/builder?template=${template.id}`}>
-                        <Button variant="secondary" className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
-                          Use Template
-                        </Button>
-                      </Link>
+                      {isLoaded && !isSignedIn ? (
+                        <Link href="/sign-in">
+                          <Button variant="secondary" className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
+                            Use Template
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href={`/builder?template=${template.id}`}>
+                          <Button variant="secondary" className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
+                            Use Template
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -381,11 +410,19 @@ export default function Home() {
               <p className="text-lg md:text-xl opacity-90 mb-8 max-w-2xl mx-auto">
                 Join professionals who landed their dream jobs with our builder.
               </p>
-              <Link href="/builder" passHref>
-                <Button size="lg" className="bg-white text-teal-600 hover:bg-zinc-100">
-                  Get Started for Free <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+              {isLoaded && !isSignedIn ? (
+                <Link href="/sign-in">
+                  <Button size="lg" className="bg-white text-teal-600 hover:bg-zinc-100">
+                    Get Started for Free <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/builder" passHref>
+                  <Button size="lg" className="bg-white text-teal-600 hover:bg-zinc-100">
+                    Get Started for Free <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
             </div>
           </motion.div>
         </div>
