@@ -1,48 +1,49 @@
-## 🚀 ResumAI – Build Smarter Resumes with AI Precision
+# 🚀 ResumAI – Build Smarter Resumes with AI Precision
 
-Welcome to ResumAI, the intelligent resume builder that empowers you to craft personalized, professional resumes in just a few clicks. Say goodbye to rigid templates and hello to stunning, customizable resumes enhanced by modern AI tools and sleek design.
+**ResumAI** is an intelligent resume builder powered by **Gemini AI** that helps you create professional, personalized resumes in just a few clicks. Say goodbye to boring templates — ResumAI offers sleek, customizable designs with real-time AI assistance.
 
-![ResuAI Banner](https://i.ibb.co/TqrM1gnP/Screenshot-2025-05-26-134006.png) 
+![ResumAI Banner](https://i.ibb.co/TqrM1gnP/Screenshot-2025-05-26-134006.png)
 
 ---
 
 ## ✨ Features
 
-- 🔮 **AI-Powered Resume Generation**
-- 🎨 Beautiful, responsive, and modern UI
-- 📄 Download as PDF (using `jspdf` and `html2canvas`)
-- 🎛️ Real-time form validation with `React Hook Form` + `Zod`
-- 📱 Mobile-first and responsive
-- 🚀 Built with **Next.js 15**, **Tailwind CSS**, and **Framer Motion**
-- 🎯 Smart component architecture using `Radix UI`
+- 🧠 **AI Resume Enhancer** (powered by Gemini AI)  
+- 🎨 Modern and responsive UI
+- 📄 Export resumes as PDF
+- ✅ Real-time validation with smart forms
+- 📱 Mobile-friendly
+- ⚡ Built with the latest web technologies
 
 ---
 
 ## ⚙️ Tech Stack
 
-- **Frontend:** Next.js 15, React 19, Tailwind CSS, Framer Motion
-- **Forms & Validation:** React Hook Form, Zod, @hookform/resolvers
-- **UI Components:** Radix UI, Lucide Icons
-- **PDF Export:** html2canvas, jsPDF
-- **Authentication:** Clerk
-- **Charts:** Recharts
-- **State & Theme Management:** next-themes, class-variance-authority
-- **Carousel:** Embla Carousel
-- **Utilities:** clsx, tailwind-merge, date-fns
+- **Framework:** Next.js , React  
+- **Styling:** Tailwind CSS, Framer Motion  
+- **Forms:** React Hook Form, Zod  
+- **UI:** Radix UI, Lucide Icons  
+- **PDF Export:** jsPDF, html2canvas  
+- **Auth:** Clerk  
+- **AI:** Gemini AI  
 
 ---
 
-## 📦 Installation
+## 🌐 Live Demo
+
+👉 [Visit ResumAI](https://resume-builder-xi-three.vercel.app)
+
+---
+
+## 📦 Getting Started
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-username/resuai.git
-
-# Navigate into the project directory
-cd resuai
+git clone https://github.com/your-username/resumai.git
+cd resumai
 
 # Install dependencies
 npm install
 
-# Run the development server
+# Start development server
 npm run dev
